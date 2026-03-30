@@ -36,40 +36,36 @@ export function DesktopDock() {
           const hovered = hoveredItem === item.href;
 
           return (
-            <motion.div
-              key={item.href}
-              animate={{ scale: hovered ? 1.15 : 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-            >
+            <div key={item.href}>
               <Link
                 to={item.href}
                 onMouseEnter={() => setHoveredItem(item.href)}
                 onMouseLeave={() => setHoveredItem(null)}
-                className="relative w-11 h-11 rounded-[14px] flex items-center justify-center transition-all duration-300"
+                className="group relative w-11 h-11 rounded-[14px] flex items-center justify-center transition-all duration-300"
                 style={{
                   background: active
                     ? 'linear-gradient(145deg, hsl(0 0% 100% / 0.22), hsl(0 0% 100% / 0.10))'
-                    : hovered
-                      ? 'hsl(0 0% 100% / 0.08)'
-                      : 'transparent',
+                    : 'transparent',
                   boxShadow: active
                     ? 'inset 0 1px 0 hsl(0 0% 100% / 0.15), 0 2px 8px hsl(270 40% 10% / 0.2)'
                     : 'none',
                 }}
               >
                 <item.icon
-                  className="w-5 h-5 transition-all duration-200"
+                  className="w-5 h-5"
                   style={{
                     color: active
                       ? 'hsl(0 0% 100%)'
                       : hovered
                         ? 'hsl(270 20% 85%)'
                         : 'hsl(270 15% 65%)',
+                    transform: hovered ? 'scale(1.25)' : 'scale(1)',
+                    transition: 'transform 0.2s ease, color 0.2s ease',
                   }}
                   strokeWidth={active ? 2 : 1.5}
                 />
               </Link>
-            </motion.div>
+            </div>
           );
         })}
       </div>

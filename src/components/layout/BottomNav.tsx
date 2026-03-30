@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, MessageSquareText, User } from 'lucide-react';
+import { useState } from 'react';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -10,6 +11,7 @@ const navItems = [
 
 export function BottomNav() {
   const location = useLocation();
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/';
@@ -36,6 +38,8 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 to={item.href}
+                onMouseEnter={() => setHoveredItem(item.href)}
+                onMouseLeave={() => setHoveredItem(null)}
                 className="relative w-16 h-14 rounded-[20px] flex items-center justify-center transition-all duration-300"
                 style={{
                   background: active
@@ -47,11 +51,15 @@ export function BottomNav() {
                 }}
               >
                 <item.icon
-                  className="w-6 h-6 transition-all duration-200"
+                  className="w-6 h-6"
                   style={{
                     color: active
                       ? 'hsl(0 0% 100%)'
-                      : 'hsl(270 15% 70%)',
+                      : hoveredItem === item.href
+                        ? 'hsl(270 20% 85%)'
+                        : 'hsl(270 15% 70%)',
+                    transform: hoveredItem === item.href ? 'scale(1.25)' : 'scale(1)',
+                    transition: 'transform 0.2s ease, color 0.2s ease',
                   }}
                   strokeWidth={active ? 2 : 1.5}
                 />
