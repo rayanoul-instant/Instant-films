@@ -77,11 +77,11 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
               size="icon"
               onClick={handleFavorite}
               className={cn(
-                "absolute top-2 right-2 z-10 bg-black/50 backdrop-blur-sm",
-                isFavorited ? "text-accent" : "text-foreground/80 hover:text-accent"
+                "absolute top-2 right-2 z-10 transition-opacity duration-200",
+                isFavorited ? "opacity-100 text-accent" : "opacity-0 group-hover:opacity-60 text-foreground/80 hover:!opacity-100 hover:text-accent"
               )}
             >
-              <Bookmark className={cn("w-5 h-5", isFavorited && "fill-accent")} />
+              <Bookmark className={cn("w-4 h-4", isFavorited && "fill-accent")} />
             </Button>
           )}
 

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites, useWatchHistory, useFilms, useToggleFavorite } from '@/hooks/useFilms';
-import { useFollowersCount, useFollowingCount } from '@/hooks/useFollowers';
+import { useFriendsCount } from '@/hooks/useFollowers';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -54,8 +54,7 @@ export default function AccountPage() {
   const { data: allFilms } = useFilms();
   const { data: myRatings } = useMyRatings(user?.id);
   const { data: reviewLikes } = useMyReviewLikes(user?.id);
-  const { data: followersCount = 0 } = useFollowersCount(user?.id || '');
-  const { data: followingCount = 0 } = useFollowingCount(user?.id || '');
+  const { data: friendsCount = 0 } = useFriendsCount(user?.id || '');
   const toggleFavorite = useToggleFavorite();
   const queryClient = useQueryClient();
 
@@ -351,13 +350,8 @@ export default function AccountPage() {
                 <div className="flex flex-wrap justify-center sm:justify-start gap-5">
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">{followersCount}</span>
-                    <span className="text-muted-foreground text-sm">followers</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-semibold">{followingCount}</span>
-                    <span className="text-muted-foreground text-sm">following</span>
+                    <span className="font-semibold">{friendsCount}</span>
+                    <span className="text-muted-foreground text-sm">friends</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4 text-primary" />

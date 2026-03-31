@@ -78,6 +78,27 @@ export function useToggleFollow() {
   });
 }
 
+export function useFriendsCount(userId: string) {
+  return useQuery({
+    queryKey: ['friends-count', userId],
+    queryFn: async () => {
+      const { data: following } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', userId);
+      if (!following || following.length === 0) return 0;
+      const followingIds = following.map(f => f.following_id);
+      const { count } = await supabase
+        .from('followers')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', userId)
+        .in('follower_id', followingIds);
+      return count || 0;
+    },
+    enabled: !!userId,
+  });
+}
+
 export function useFollowingList() {
   const { user } = useAuth();
   return useQuery({

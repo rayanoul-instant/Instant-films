@@ -15,13 +15,23 @@ export function SplashScreen({ show, onDone }: SplashScreenProps) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
         >
+          {/* Fond flouté */}
+          <video
+            src={splashVideo}
+            autoPlay
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
+            aria-hidden
+          />
+          {/* Vidéo principale */}
           <video
             src={splashVideo}
             autoPlay
             muted
             playsInline
             onEnded={onDone}
-            className="w-full h-full object-cover"
+            className="relative w-full h-full object-contain"
           />
         </motion.div>
       )}

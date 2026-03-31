@@ -212,7 +212,7 @@ export default function MessagesPage() {
           </div>
 
           {/* Chat Area */}
-          <div className="md:col-span-2 flex flex-col border border-border rounded-xl bg-card overflow-hidden">
+          <div className={`md:col-span-2 flex flex-col border border-border rounded-xl bg-card overflow-hidden ${!selectedUser ? 'hidden md:flex' : ''}`}>
             {selectedUser ? (
               <>
                 <div className="px-4 py-3 border-b border-border bg-secondary/50 flex items-center justify-between">
@@ -271,11 +271,7 @@ export default function MessagesPage() {
                   </Button>
                 </div>
               </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                Select a conversation or search for a user
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

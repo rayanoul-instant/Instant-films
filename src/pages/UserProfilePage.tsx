@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useFollowersCount, useFollowingCount, useIsFollowing, useToggleFollow } from '@/hooks/useFollowers';
+import { useFriendsCount, useIsFollowing, useToggleFollow } from '@/hooks/useFollowers';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,7 @@ export default function UserProfilePage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { data: followersCount = 0 } = useFollowersCount(id!);
-  const { data: followingCount = 0 } = useFollowingCount(id!);
+  const { data: friendsCount = 0 } = useFriendsCount(id!);
   const { data: isFollowing = false } = useIsFollowing(id!);
   const toggleFollowMutation = useToggleFollow();
 
@@ -154,7 +153,7 @@ export default function UserProfilePage() {
                       onClick={handleFollow}
                       className={isFollowing ? 'border-border' : 'btn-cinema'}
                     >
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {isFollowing ? 'Friends' : 'Add friend'}
                     </Button>
                     <Button
                       variant="outline"
@@ -171,13 +170,8 @@ export default function UserProfilePage() {
               <div className="flex flex-wrap justify-center sm:justify-start gap-6">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-primary" />
-                  <span className="font-semibold">{followersCount}</span>
-                  <span className="text-muted-foreground text-sm">followers</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-semibold">{followingCount}</span>
-                  <span className="text-muted-foreground text-sm">following</span>
+                  <span className="font-semibold">{friendsCount}</span>
+                  <span className="text-muted-foreground text-sm">friends</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Eye className="w-4 h-4 text-primary" />

@@ -27,7 +27,7 @@ const Index = () => {
   return (
     <Layout showNavLogo={scrolled}>
       {/* Hero with large logo */}
-      <section className="relative flex items-center justify-center py-28 md:py-40 overflow-hidden">
+      <section className="relative flex items-center justify-center py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background" />
@@ -39,7 +39,7 @@ const Index = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: scrolled ? 0 : 1, scale: scrolled ? 0.5 : 1, y: scrolled ? -100 : 0 }}
             transition={{ duration: 0.5 }}
-            className="h-32 md:h-48 mx-auto mb-6 object-contain"
+            className="h-44 md:h-64 mx-auto mb-6 object-contain"
           />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
