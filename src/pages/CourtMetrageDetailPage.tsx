@@ -1,0 +1,127 @@
+import { useParams, Link } from 'react-router-dom';
+import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react';
+import { Layout } from '@/components/layout/Layout';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCourtsMetrages } from '@/hooks/useCourtsMetrages';
+import { motion } from 'framer-motion';
+
+const GENRE_LABELS: Record<string, string> = {
+  drama: 'Drama', comedy: 'Comedy', horror: 'Horror', scifi: 'Sci-Fi',
+  thriller: 'Thriller', romance: 'Romance', animation: 'Animation',
+  fantasy: 'Fantasy', documentary: 'Documentary', experimental: 'Experimental',
+};
+
+function getYoutubeId(url: string | null) {
+  if (!url) return null;
+  const match = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
+  return match ? match[1] : null;
+}
+
+export default function CourtMetrageDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: films, isLoading } = useCourtsMetrages();
+  const film = films?.find(f => f.id === id);
+  const ytId = getYoutubeId(film?.lien ?? null);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container px-4 py-8">
+          <Skeleton className="h-8 w-32 mb-6" />
+          <Skeleton className="aspect-video rounded-xl mb-8" />
+          <Skeleton className="h-10 w-2/3 mb-4" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!film) {
+    return (
+      <Layout>
+        <div className="container px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Film not found</h1>
+          <Link to="/search"><button className="text-primary underline">Back to search</button></Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="container px-4 py-8">
+        <Link
+          to="/search"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to catalog
+        </Link>
+
+        {/* Player YouTube intégré */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
+            {ytId ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${ytId}`}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                Vidéo non disponible
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Titre + meta */}
+        <div className="mb-6">
+          <h1 className="font-display text-2xl md:text-3xl font-bold mb-3">{film.titre}</h1>
+
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+            {film.auteur && (
+              <span className="flex items-center gap-1.5"><User className="w-4 h-4" />{film.auteur}</span>
+            )}
+            {film.annee && (
+              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" />{film.annee}</span>
+            )}
+            {film.duree && (
+              <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" />{film.duree}</span>
+            )}
+          </div>
+
+          {film.genres?.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {film.genres.map(g => (
+                <Badge key={g} variant="secondary">
+                  {GENRE_LABELS[g] ?? g}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {film.themes && (
+            <div className="flex items-start gap-2 text-sm text-muted-foreground">
+              <Tag className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{film.themes}</span>
+            </div>
+          )}
+        </div>
+
+        {film.synopsis && (
+          <div>
+            <h2 className="font-display text-lg font-semibold mb-2">Synopsis</h2>
+            <p className="text-muted-foreground leading-relaxed">{film.synopsis}</p>
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+}

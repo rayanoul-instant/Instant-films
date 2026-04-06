@@ -127,7 +127,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
             </div>
             
             <div className="flex gap-1">
-              {film.genres.slice(0, 2).map((genre) => (
+              {(film.genres || []).slice(0, 2).map((genre) => (
                 <Badge 
                   key={genre} 
                   variant="outline" 

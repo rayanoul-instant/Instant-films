@@ -75,7 +75,6 @@ export default function SearchPage() {
   return (
     <Layout>
       <div className="container px-4 py-6">
-        {/* Search Bar */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
@@ -86,7 +85,6 @@ export default function SearchPage() {
           />
         </div>
 
-        {/* Main categories */}
         <div className="flex gap-2 mb-4">
           {(['movies', 'users'] as const).map((cat) => (
             <button
@@ -105,7 +103,6 @@ export default function SearchPage() {
 
         {category === 'movies' ? (
           <>
-            {/* Sort + count */}
             <div className="flex items-center justify-between mb-4">
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
                 <SelectTrigger className="w-[160px] bg-secondary border-border">
@@ -120,7 +117,6 @@ export default function SearchPage() {
               <span className="text-sm text-muted-foreground">{films?.length || 0} results</span>
             </div>
 
-            {/* Genres */}
             <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
               <button
                 onClick={() => handleGenreChange(null)}
@@ -151,7 +147,6 @@ export default function SearchPage() {
           </>
         ) : (
           <>
-            {/* User sub-tabs */}
             <div className="flex gap-2 mb-4">
               {([
                 { key: 'all', label: 'All users' },
@@ -171,7 +166,6 @@ export default function SearchPage() {
               ))}
             </div>
 
-            {/* User results */}
             <div className="space-y-2">
               {displayedUsers.length === 0 ? (
                 <p className="text-center text-muted-foreground text-sm py-8">

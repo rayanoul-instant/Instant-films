@@ -1,9 +1,15 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 import { AuthProvider } from "@/hooks/useAuth";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import Index from "./pages/Index";
@@ -15,6 +21,7 @@ import DiscussionDetailPage from "./pages/DiscussionDetailPage";
 import MessagesPage from "./pages/MessagesPage";
 import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
+import CourtMetrageDetailPage from "./pages/CourtMetrageDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +42,7 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/search" element={<SearchPage />} />
@@ -45,6 +53,7 @@ const App = () => {
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/account" element={<AccountPage />} />
+                <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

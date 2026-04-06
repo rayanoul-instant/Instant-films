@@ -201,7 +201,7 @@ export default function FilmDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {film.genres.map((genre) => (
+            {(film.genres || []).map((genre) => (
               <Badge key={genre} variant="secondary" className="bg-secondary text-secondary-foreground">
                 {GENRE_LABELS[genre]}
               </Badge>
