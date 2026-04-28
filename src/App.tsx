@@ -3,15 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
-  return null;
-}
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SplashScreen } from "@/components/layout/SplashScreen";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { DesktopDock } from "@/components/layout/DesktopDock";
 import Index from "./pages/Index";
 import SearchPage from "./pages/SearchPage";
 import UserProfilePage from "./pages/UserProfilePage";
@@ -25,6 +22,54 @@ import CourtMetrageDetailPage from "./pages/CourtMetrageDetailPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Disable browser's native scroll restoration so we control it ourselves
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
+function ScrollManager() {
+  const { pathname } = useLocation();
+  const navType = useNavigationType();
+
+  useEffect(() => {
+    if (navType !== 'POP') {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, navType]);
+
+  return null;
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: "easeInOut" }}
+      >
+        <Routes location={location}>
+          <Route path="/" element={<Index />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/user/:id" element={<UserProfilePage />} />
+          <Route path="/films/:id" element={<FilmDetailPage />} />
+          <Route path="/discussions" element={<DiscussionsPage />} />
+          <Route path="/discussions/:id" element={<DiscussionDetailPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -42,20 +87,10 @@ const App = () => {
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <ScrollToTop />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/user/:id" element={<UserProfilePage />} />
-                <Route path="/films/:id" element={<FilmDetailPage />} />
-                <Route path="/discussions" element={<DiscussionsPage />} />
-                <Route path="/discussions/:id" element={<DiscussionDetailPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <ScrollManager />
+              <DesktopDock />
+              <BottomNav />
+              <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>

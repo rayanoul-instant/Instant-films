@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, Link, useNavigationType } from 'react-router-dom';
+
 import { Search } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmGrid } from '@/components/films/FilmGrid';
@@ -14,7 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 const GENRES: FilmGenre[] = [
   'drama', 'comedy', 'documentary', 'animation',
-  'thriller', 'horror', 'romance', 'scifi', 'experimental', 'fantasy'
+  'thriller', 'horror', 'romance', 'scifi', 'experimental', 'fantasy', 'mainstream', 'kid'
 ];
 
 export default function SearchPage() {
@@ -22,7 +23,7 @@ export default function SearchPage() {
   const { user } = useAuth();
 
   const initialSearch = searchParams.get('search') || '';
-  const initialSort = (searchParams.get('sortBy') as 'newest' | 'popular' | 'rating') || 'newest';
+  const initialSort = (searchParams.get('sortBy') as 'newest' | 'popular' | 'rating') || 'popular';
   const initialGenre = searchParams.get('genre') as FilmGenre | null;
 
   const [search, setSearch] = useState(initialSearch);
@@ -32,11 +33,36 @@ export default function SearchPage() {
   const [category, setCategory] = useState<'movies' | 'users'>('movies');
   const [userTab, setUserTab] = useState<'all' | 'friends'>('all');
 
+  const navType = useNavigationType();
+
   const { data: films, isLoading } = useFilms({
     search: category === 'users' ? '' : search,
     sortBy,
     genre: selectedGenre || undefined,
   });
+
+  const scrollRestored = useRef(false);
+
+  // Restore: scroll the last clicked film into view (once, only on back navigation)
+  useEffect(() => {
+    if (navType !== 'POP' || isLoading || scrollRestored.current) return;
+    const lastId = sessionStorage.getItem('lastClickedFilm');
+    if (!lastId) return;
+    const el = document.getElementById(`film-${lastId}`);
+    if (el) {
+      scrollRestored.current = true;
+      sessionStorage.removeItem('lastClickedFilm');
+      el.scrollIntoView({ block: 'center' });
+    }
+  }, [navType, isLoading]);
+
+  // On fresh navigation (not back), clear lastClickedFilm and scroll to top
+  useEffect(() => {
+    if (navType !== 'POP') {
+      sessionStorage.removeItem('lastClickedFilm');
+    }
+  }, [navType]);
+
 
   const { data: friendsList = [] } = useFollowingList();
 

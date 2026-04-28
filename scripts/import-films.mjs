@@ -112,33 +112,46 @@ function cleanText(val) {
 function cleanTitle(raw) {
   let t = raw.trim();
 
-  // Supprime les séparateurs " | " et " - " suivis de descripteurs parasites
-  const NOISE = [
-    'short film', 'short movie', 'short horror', 'short comedy', 'short drama',
-    'short thriller', 'short sci-fi', 'short romance', 'short animation',
-    'official short', 'animated short', 'award.winning', 'award winning',
-    'iphone', 'shot on iphone', '4k', 'hd', 'full', 'online premiere',
-    'now streaming', 'official', 'english', 'hindi', 'tamil', 'malayalam',
-    'kannada', 'telugu', 'assamese', 'nepali', 'urdu', 'gujarati',
-    'dust', 'gobelins', 'mym', 'cgbros',
-  ];
-  const noiseRe = new RegExp(
-    `(\\s*[|\\-–—]+\\s*.*(${NOISE.join('|')}).*)$`,
-    'i'
-  );
-  t = t.replace(noiseRe, '');
+  // Cas 1 : titre entre guillemets → extraire directement "Vrai Titre"
+  const quoted = t.match(/^[""](.+?)[""](\s*[|\-–—].*)?$/);
+  if (quoted) return quoted[1].trim();
 
-  // Supprime l'année entre parenthèses : "(2021)", "(2025)"
+  // Cas 2 : coupe tout après " | " (séparateur fort)
+  const pipeIdx = t.indexOf(' | ');
+  if (pipeIdx > 0) t = t.slice(0, pipeIdx).trim();
+
+  // Mots-clés qui signalent que tout ce qui suit est du bruit
+  const NOISE_WORDS = [
+    'short film', 'short movie', 'short horror', 'short comedy', 'short drama',
+    'short thriller', 'short animation', 'official short', 'animated short',
+    'award winning', 'award-winning', 'capstone', 'iphone', 'shot on',
+    '4k', ' hd', 'full film', 'online premiere', 'now streaming',
+    'ft.', 'feat.', 'starring', 'presented by',
+    'hindi', 'tamil', 'malayalam', 'kannada', 'telugu', 'assamese',
+    'nepali', 'urdu', 'gujarati', 'bodo', 'kokborok',
+    'dust', 'gobelins', 'cgbros', 'mym', 'accd',
+  ];
+
+  // Coupe au premier " - " suivi d'un mot-clé parasite
+  const dashParts = t.split(/\s*[-–—]\s*/);
+  if (dashParts.length > 1) {
+    for (let i = 1; i < dashParts.length; i++) {
+      const rest = dashParts.slice(i).join(' - ').toLowerCase();
+      if (NOISE_WORDS.some(n => rest.startsWith(n) || rest.includes(n))) {
+        t = dashParts.slice(0, i).join(' - ').trim();
+        break;
+      }
+    }
+  }
+
+  // Supprime l'année entre parenthèses : "(2021)"
   t = t.replace(/\s*\(\d{4}\)\s*/g, ' ').trim();
 
-  // Supprime les qualificatifs entre parenthèses parasites : "(4K)", "(HD)", "(Full)"
-  t = t.replace(/\s*\((4k|hd|full|official|award.winning|online premiere)\)\s*/gi, ' ').trim();
+  // Supprime les qualificatifs entre parenthèses : "(4K)", "(HD)", "(Full)"
+  t = t.replace(/\s*\((4k|hd|full|official|award.winning)\)\s*/gi, ' ').trim();
 
-  // Supprime les hashtags en début ou fin
-  t = t.replace(/^#\S+\s*/g, '').replace(/\s*#\S+$/g, '').trim();
-
-  // Supprime les guillemets doubles autour du titre s'il y en a
-  t = t.replace(/^"+|"+$/g, '').trim();
+  // Supprime les hashtags
+  t = t.replace(/^#\S+\s*/g, '').replace(/\s*#\S+/g, '').trim();
 
   return t || raw.trim();
 }
@@ -217,14 +230,29 @@ if (testError) {
 }
 console.log('🔗 Connexion Supabase OK\n');
 
+// Charger la blacklist des films supprimés
+const { data: blacklistRows } = await supabase.from('deleted_films').select('video_url');
+const blacklist = new Set((blacklistRows || []).map(r => r.video_url));
+console.log(`🚫 ${blacklist.size} films en liste noire\n`);
+
+const filmsToImport = films.filter(f => {
+  if (blacklist.has(f.video_url)) {
+    console.log(`⛔ Ignoré (blacklist) : ${f.title}`);
+    return false;
+  }
+  return true;
+});
+
+console.log(`\n➡️  ${filmsToImport.length} films à insérer après filtrage blacklist\n`);
+
 // Insertion par batch de 10
 const BATCH_SIZE = 10;
 let inserted = 0;
 let errors = 0;
 let firstError = null;
 
-for (let i = 0; i < films.length; i += BATCH_SIZE) {
-  const batch = films.slice(i, i + BATCH_SIZE);
+for (let i = 0; i < filmsToImport.length; i += BATCH_SIZE) {
+  const batch = filmsToImport.slice(i, i + BATCH_SIZE);
   const { data, error } = await supabase.from('films').insert(batch).select('id');
   if (error) {
     if (!firstError) firstError = error;
@@ -232,11 +260,11 @@ for (let i = 0; i < films.length; i += BATCH_SIZE) {
     errors += batch.length;
   } else {
     inserted += data.length;
-    process.stdout.write(`\r➕ ${inserted}/${films.length} insérés...`);
+    process.stdout.write(`\r➕ ${inserted}/${filmsToImport.length} insérés...`);
   }
 }
 
-console.log(`\n\n🎬 Import terminé : ${inserted} insérés, ${errors} erreurs.`);
+console.log(`\n\n🎬 Import terminé : ${inserted} insérés, ${errors} erreurs, ${blacklist.size} films ignorés (blacklist).`);
 
 if (firstError) {
   console.log('\n💡 Détail de la première erreur :');

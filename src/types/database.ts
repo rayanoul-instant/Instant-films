@@ -1,8 +1,16 @@
-export type FilmGenre = 'drama' | 'comedy' | 'horror' | 'scifi' | 'documentary' | 'animation' | 'experimental' | 'romance' | 'thriller' | 'fantasy';
+export type FilmGenre = 'drama' | 'comedy' | 'horror' | 'scifi' | 'documentary' | 'animation' | 'experimental' | 'romance' | 'thriller' | 'fantasy' | 'mainstream' | 'kid';
+
+export interface AvatarAccessories {
+  color?: string;
+  hat?: string;
+  glasses?: string;
+  mask?: string;
+}
 
 export interface Film {
   id: string;
   title: string;
+  display_title: string | null;
   synopsis: string | null;
   duration_minutes: number;
   video_url: string;
@@ -13,6 +21,7 @@ export interface Film {
   director: string | null;
   is_featured: boolean;
   view_count: number;
+  quality_score: number;
   created_at: string;
   updated_at: string;
   average_rating?: number;
@@ -23,7 +32,7 @@ export interface Profile {
   username: string;
   bio: string | null;
   avatar_base: string;
-  avatar_accessories: string[];
+  avatar_accessories: AvatarAccessories | null;
   created_at: string;
   updated_at: string;
 }
@@ -36,7 +45,7 @@ export interface FilmRating {
   review: string | null;
   created_at: string;
   updated_at: string;
-  profile?: Profile;
+  profile?: Pick<Profile, 'id' | 'username' | 'avatar_accessories'>;
 }
 
 export interface Favorite {
@@ -44,6 +53,7 @@ export interface Favorite {
   user_id: string;
   film_id: string;
   created_at: string;
+  film?: Film;
 }
 
 export interface WatchHistory {
@@ -65,8 +75,8 @@ export interface Discussion {
   comments_count: number;
   created_at: string;
   updated_at: string;
-  profile?: Profile;
-  film?: Film;
+  profile?: Pick<Profile, 'id' | 'username' | 'avatar_accessories'>;
+  film?: Pick<Film, 'id' | 'title' | 'thumbnail_url'>;
 }
 
 export interface Comment {
@@ -78,7 +88,7 @@ export interface Comment {
   likes_count: number;
   created_at: string;
   updated_at: string;
-  profile?: Profile;
+  profile?: Pick<Profile, 'id' | 'username' | 'avatar_accessories'>;
   replies?: Comment[];
 }
 
@@ -89,9 +99,17 @@ export interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
-  sender_profile?: Profile;
-  receiver_profile?: Profile;
 }
+
+export interface ReviewLike {
+  id: string;
+  user_id: string;
+  rating_id: string;
+  created_at: string;
+}
+
+export const getFilmTitle = (film: Pick<Film, 'title' | 'display_title'>) =>
+  film.display_title || film.title;
 
 export const GENRE_LABELS: Record<FilmGenre, string> = {
   drama: 'Drama',
@@ -104,11 +122,8 @@ export const GENRE_LABELS: Record<FilmGenre, string> = {
   romance: 'Romance',
   thriller: 'Thriller',
   fantasy: 'Fantasy',
+  mainstream: 'Mainstream',
+  kid: 'Kid',
 };
 
 export const AVATAR_BASES = ['default', 'cat', 'dog', 'robot', 'alien', 'ghost'];
-export const AVATAR_ACCESSORIES = {
-  hats: ['none', 'fedora', 'beret', 'crown', 'cowboy', 'wizard'],
-  glasses: ['none', 'round', 'square', 'sunglasses', 'monocle'],
-  accessories: ['none', 'bowtie', 'scarf', 'necklace', 'earrings'],
-};

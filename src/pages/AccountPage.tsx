@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy } from 'lucide-react';
+import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy, UserPlus, Users, Settings, LogOut, History } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
-import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_FACE, AVATAR_EXTRAS } from '@/components/films/AvatarDisplay';
+import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
-import { useFavorites, useWatchHistory, useFilms, useToggleFavorite } from '@/hooks/useFilms';
-import { useFriendsCount } from '@/hooks/useFollowers';
+import { useFavorites, useWatchHistory, useFilms, useToggleFavorite, useTop3, useToggleTop3 } from '@/hooks/useFilms';
+import { useFriendsCount, usePendingFriendRequests, useRespondToFriendRequest, useFriendsList } from '@/hooks/useFollowers';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -48,24 +48,32 @@ function useMyReviewLikes(userId?: string) {
 }
 
 export default function AccountPage() {
-  const { user, profile, loading, updateProfile } = useAuth();
+  const { user, profile, loading, updateProfile, signOut } = useAuth();
   const { data: favorites } = useFavorites();
+  const { data: top3Data } = useTop3();
   const { data: history } = useWatchHistory();
   const { data: allFilms } = useFilms();
   const { data: myRatings } = useMyRatings(user?.id);
   const { data: reviewLikes } = useMyReviewLikes(user?.id);
   const { data: friendsCount = 0 } = useFriendsCount(user?.id || '');
+  const { data: pendingRequests = [] } = usePendingFriendRequests();
+  const { data: friendsList = [] } = useFriendsList();
+  const respondToRequest = useRespondToFriendRequest();
   const toggleFavorite = useToggleFavorite();
+  const toggleTop3 = useToggleTop3();
   const queryClient = useQueryClient();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showFriendsDrawer, setShowFriendsDrawer] = useState(false);
+  const [friendsTab, setFriendsTab] = useState<'friends' | 'requests'>('friends');
+  const [showSettings, setShowSettings] = useState(false);
   const [editTab, setEditTab] = useState<'profile' | 'avatar' | 'top3'>('profile');
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [avatarColor, setAvatarColor] = useState('#7C3AED');
   const [avatarHat, setAvatarHat] = useState('none');
-  const [avatarFace, setAvatarFace] = useState('none');
-  const [avatarExtra, setAvatarExtra] = useState('none');
+  const [avatarGlasses, setAvatarGlasses] = useState('none');
+  const [avatarMask, setAvatarMask] = useState('none');
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [searchTop3, setSearchTop3] = useState('');
 
@@ -93,8 +101,8 @@ export default function AccountPage() {
     setEditBio(profile?.bio || '');
     setAvatarColor(acc?.color || '#7C3AED');
     setAvatarHat(acc?.hat || 'none');
-    setAvatarFace(acc?.face || 'none');
-    setAvatarExtra(acc?.extra || 'none');
+    setAvatarGlasses(acc?.glasses || 'none');
+    setAvatarMask(acc?.mask || 'none');
     setEditTab('profile');
     setIsEditing(true);
   };
@@ -104,15 +112,14 @@ export default function AccountPage() {
     const { error } = await updateProfile({
       username: editUsername,
       bio: editBio,
-      avatar_accessories: { color: avatarColor, hat: avatarHat, face: avatarFace, extra: avatarExtra } as any,
+      avatar_accessories: { color: avatarColor, hat: avatarHat, glasses: avatarGlasses, mask: avatarMask } as any,
     });
     if (error) { toast.error('Failed to update profile'); }
     else { toast.success('Profile updated!'); setIsEditing(false); }
   };
 
   const handleToggleTop3 = async (filmId: string) => {
-    await toggleFavorite.mutateAsync(filmId);
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    await toggleTop3.mutateAsync(filmId);
   };
 
   const getLikes = (ratingId: string) =>
@@ -122,7 +129,7 @@ export default function AccountPage() {
     ? (myRatings.reduce((s, r) => s + r.rating, 0) / myRatings.length / 2).toFixed(1)
     : null;
 
-  const topFavorites = favorites?.slice(0, 3) || [];
+  const topFavorites = top3Data?.slice(0, 3) || [];
   const sortedReviews = [...(myRatings || [])].sort(
     (a, b) => getLikes(b.id) - getLikes(a.id)
   );
@@ -131,10 +138,10 @@ export default function AccountPage() {
 
   const currentAcc = profile?.avatar_accessories as any;
 
-  // Films available for Top 3 search (not already in favorites)
-  const favoriteFilmIds = new Set(favorites?.map(f => f.film_id) || []);
+  // Films available for Top 3 search (not already in top3)
+  const top3FilmIds = new Set(top3Data?.map(f => f.film_id) || []);
   const filteredSearchFilms = (allFilms || []).filter(f =>
-    !favoriteFilmIds.has(f.id) &&
+    !top3FilmIds.has(f.id) &&
     searchTop3.length > 0 &&
     f.title.toLowerCase().includes(searchTop3.toLowerCase())
   ).slice(0, 5);
@@ -174,8 +181,8 @@ export default function AccountPage() {
                   <AvatarDisplay
                     color={avatarColor}
                     hat={avatarHat === 'none' ? undefined : avatarHat}
-                    face={avatarFace === 'none' ? undefined : avatarFace}
-                    extra={avatarExtra === 'none' ? undefined : avatarExtra}
+                    glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
+                    mask={avatarMask === 'none' ? undefined : avatarMask}
                     size="xl"
                   />
                   <div className="flex-1 space-y-4 w-full">
@@ -198,8 +205,8 @@ export default function AccountPage() {
                     <AvatarDisplay
                       color={avatarColor}
                       hat={avatarHat === 'none' ? undefined : avatarHat}
-                      face={avatarFace === 'none' ? undefined : avatarFace}
-                      extra={avatarExtra === 'none' ? undefined : avatarExtra}
+                      glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
+                      mask={avatarMask === 'none' ? undefined : avatarMask}
                       size="xl"
                     />
                   </div>
@@ -228,38 +235,47 @@ export default function AccountPage() {
                     <div className="flex flex-wrap gap-2">
                       {AVATAR_HATS.map((h) => (
                         <button key={h.id} onClick={() => setAvatarHat(h.id)}
-                          className={cn("px-3 py-1.5 rounded-lg text-sm border transition-all",
-                            avatarHat === h.id ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary hover:border-muted-foreground"
+                          className={cn("p-2 rounded-lg border transition-all",
+                            avatarHat === h.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
                           )}>
-                          {h.emoji || '—'} {h.label}
+                          {h.image
+                            ? <img src={h.image} alt={h.label} className="w-10 h-10 object-contain" />
+                            : <span className="text-xs px-1">—</span>
+                          }
                         </button>
                       ))}
                     </div>
                   </div>
-                  {/* Face */}
+                  {/* Glasses */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Face accessory</p>
+                    <p className="text-xs text-muted-foreground mb-2">Glasses</p>
                     <div className="flex flex-wrap gap-2">
-                      {AVATAR_FACE.map((f) => (
-                        <button key={f.id} onClick={() => setAvatarFace(f.id)}
-                          className={cn("px-3 py-1.5 rounded-lg text-sm border transition-all",
-                            avatarFace === f.id ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary hover:border-muted-foreground"
+                      {AVATAR_GLASSES.map((g) => (
+                        <button key={g.id} onClick={() => setAvatarGlasses(g.id)}
+                          className={cn("p-2 rounded-lg border transition-all",
+                            avatarGlasses === g.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
                           )}>
-                          {f.emoji || '—'} {f.label}
+                          {g.image
+                            ? <img src={g.image} alt={g.label} className="w-10 h-10 object-contain" />
+                            : <span className="text-xs px-1">—</span>
+                          }
                         </button>
                       ))}
                     </div>
                   </div>
-                  {/* Extra */}
+                  {/* Mask */}
                   <div>
-                    <p className="text-xs text-muted-foreground mb-2">Extra</p>
+                    <p className="text-xs text-muted-foreground mb-2">Mask</p>
                     <div className="flex flex-wrap gap-2">
-                      {AVATAR_EXTRAS.map((e) => (
-                        <button key={e.id} onClick={() => setAvatarExtra(e.id)}
-                          className={cn("px-3 py-1.5 rounded-lg text-sm border transition-all",
-                            avatarExtra === e.id ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary hover:border-muted-foreground"
+                      {AVATAR_MASKS.map((m) => (
+                        <button key={m.id} onClick={() => setAvatarMask(m.id)}
+                          className={cn("p-2 rounded-lg border transition-all",
+                            avatarMask === m.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
                           )}>
-                          {e.emoji || '—'} {e.label}
+                          {m.image
+                            ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" />
+                            : <span className="text-xs px-1">—</span>
+                          }
                         </button>
                       ))}
                     </div>
@@ -325,46 +341,63 @@ export default function AccountPage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
-              <AvatarDisplay
-                color={currentAcc?.color}
-                hat={currentAcc?.hat}
-                face={currentAcc?.face}
-                extra={currentAcc?.extra}
-                size="xl"
-              />
-              <div className="flex-1 text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 gap-3">
-                  <div>
-                    <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
-                      {profile?.username || 'User'}
-                    </h1>
-                    <p className="text-muted-foreground text-sm">{user.email}</p>
-                    {profile?.bio && <p className="text-muted-foreground text-sm mt-1">{profile.bio}</p>}
-                  </div>
-                  <Button variant="outline" size="sm" onClick={openEdit} className="border-border flex-shrink-0">
-                    <Edit2 className="w-4 h-4 mr-2" /> Edit
-                  </Button>
-                </div>
-
-                <div className="flex flex-wrap justify-center sm:justify-start gap-5">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">{friendsCount}</span>
-                    <span className="text-muted-foreground text-sm">friends</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-primary" />
-                    <span className="font-semibold">{history?.length || 0}</span>
-                    <span className="text-muted-foreground text-sm">watched</span>
-                  </div>
-                  {avgRating && (
-                    <div className="flex items-center gap-2">
-                      <Star className="w-4 h-4 text-primary fill-primary" />
-                      <span className="font-semibold">{avgRating}/5</span>
-                      <span className="text-muted-foreground text-sm">avg rating</span>
+            <div>
+              <div className="flex flex-row gap-6 items-start">
+                <AvatarDisplay
+                  color={currentAcc?.color}
+                  hat={currentAcc?.hat}
+                  glasses={currentAcc?.glasses}
+                  mask={currentAcc?.mask}
+                  size="xl"
+                />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-3 gap-3">
+                    <div>
+                      <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
+                        {profile?.username || 'User'}
+                      </h1>
+                      <p className="text-muted-foreground text-sm">{user.email}</p>
+                      {profile?.bio && <p className="text-muted-foreground text-sm mt-1">{profile.bio}</p>}
                     </div>
-                  )}
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <Button variant="outline" size="sm" onClick={openEdit} className="border-border">
+                        <Edit2 className="w-4 h-4 mr-2" /> Edit
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => setShowSettings(true)} className="border-border">
+                        <Settings className="w-4 h-4 mr-2" /> Settings
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-5">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setFriendsTab('friends'); setShowFriendsDrawer(true); }}
+                        className="flex items-center gap-2 relative"
+                      >
+                        <User className="w-4 h-4 text-primary" />
+                        <span className="font-semibold">{friendsCount}</span>
+                        <span className="text-muted-foreground text-sm">friends</span>
+                        {pendingRequests.length > 0 && (
+                          <span className="absolute -top-2 -right-3 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                            {pendingRequests.length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-primary" />
+                      <span className="font-semibold">{history?.length || 0}</span>
+                      <span className="text-muted-foreground text-sm">watched</span>
+                    </div>
+                    {avgRating && (
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-primary fill-primary" />
+                        <span className="font-semibold">{avgRating}/5</span>
+                        <span className="text-muted-foreground text-sm">avg rating</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -379,7 +412,7 @@ export default function AccountPage() {
               Top 3 Favorites
             </h2>
             {topFavorites.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {topFavorites.map((fav) => fav.film && (
                   <FilmCard key={fav.id} film={fav.film} isTop3 />
                 ))}
@@ -463,6 +496,153 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Friends Drawer */}
+      {showFriendsDrawer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowFriendsDrawer(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="relative bg-card border border-border rounded-2xl z-10 flex flex-col w-full max-w-sm"
+            style={{ maxHeight: '75vh' }}
+          >
+
+            {/* Tabs */}
+            <div className="flex border-b border-border flex-shrink-0">
+              <button
+                onClick={() => setFriendsTab('friends')}
+                className={cn(
+                  'flex-1 py-3 text-sm font-medium transition-colors',
+                  friendsTab === 'friends' ? 'text-foreground border-b-2 border-primary' : 'text-muted-foreground'
+                )}
+              >
+                Friends ({friendsList.length})
+              </button>
+              <button
+                onClick={() => setFriendsTab('requests')}
+                className={cn(
+                  'flex-1 py-3 text-sm font-medium transition-colors relative',
+                  friendsTab === 'requests' ? 'text-foreground border-b-2 border-primary' : 'text-muted-foreground'
+                )}
+              >
+                Requests
+                {pendingRequests.length > 0 && (
+                  <span className="ml-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5">
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 p-4 pb-8 space-y-2">
+              {friendsTab === 'friends' && (
+                friendsList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No friends yet.</p>
+                ) : (
+                  friendsList.map((f: any) => (
+                    <Link
+                      key={f.id}
+                      to={`/user/${f.id}`}
+                      onClick={() => setShowFriendsDrawer(false)}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-secondary transition-colors"
+                    >
+                      <AvatarDisplay
+                        color={f.avatar_accessories?.color}
+                        hat={f.avatar_accessories?.hat}
+                        glasses={f.avatar_accessories?.glasses}
+                        mask={f.avatar_accessories?.mask}
+                        size="sm"
+                      />
+                      <span className="font-medium text-sm">{f.username}</span>
+                    </Link>
+                  ))
+                )
+              )}
+
+              {friendsTab === 'requests' && (
+                pendingRequests.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No pending requests.</p>
+                ) : (
+                  pendingRequests.map((req: any) => (
+                    <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+                      <Link
+                        to={`/user/${req.profile?.id}`}
+                        onClick={() => setShowFriendsDrawer(false)}
+                        className="flex items-center gap-3 flex-1 min-w-0"
+                      >
+                        <AvatarDisplay
+                          color={req.profile?.avatar_accessories?.color}
+                          hat={req.profile?.avatar_accessories?.hat}
+                          glasses={req.profile?.avatar_accessories?.glasses}
+                          mask={req.profile?.avatar_accessories?.mask}
+                          size="sm"
+                        />
+                        <span className="font-medium text-sm truncate">{req.profile?.username || 'User'}</span>
+                      </Link>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => respondToRequest.mutate(
+                            { requestId: req.id, fromUserId: req.from_user_id, action: 'accept' },
+                            { onSuccess: () => toast.success('Friend added!') }
+                          )}
+                          className="w-8 h-8 rounded-full bg-primary flex items-center justify-center hover:opacity-80 transition-opacity"
+                        >
+                          <Check className="w-4 h-4 text-primary-foreground" />
+                        </button>
+                        <button
+                          onClick={() => respondToRequest.mutate({ requestId: req.id, fromUserId: req.from_user_id, action: 'decline' })}
+                          className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center hover:opacity-80 transition-opacity"
+                        >
+                          <X className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Settings Drawer */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowSettings(false)} />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="relative bg-card border border-border rounded-2xl p-6 pb-8 z-10 w-full max-w-sm"
+          >
+            <h2 className="font-display text-lg font-bold mb-4">Settings</h2>
+
+            <div className="space-y-1">
+              <Link
+                to="/history"
+                onClick={() => setShowSettings(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary transition-colors"
+              >
+                <History className="w-5 h-5 text-muted-foreground" />
+                <span className="font-medium">History</span>
+              </Link>
+
+              <button
+                onClick={async () => { await signOut(); setShowSettings(false); }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-secondary transition-colors text-left text-destructive"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="font-medium">Log out</span>
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </Layout>
   );
 }

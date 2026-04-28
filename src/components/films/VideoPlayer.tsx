@@ -1,13 +1,17 @@
-import { useRef, useState } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Star, Share2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import logoInstant from '@/assets/logo-instant.png';
 
 interface VideoPlayerProps {
   src: string;
   poster?: string;
+  durationMinutes?: number;
   onPlay?: () => void;
+  onRate?: () => void;
+  onShare?: () => void;
 }
 
 function getYouTubeId(url: string): string | null {
@@ -24,24 +28,94 @@ function getYouTubeId(url: string): string | null {
   return null;
 }
 
-export function VideoPlayer({ src, poster, onPlay }: VideoPlayerProps) {
+export function VideoPlayer({ src, poster, durationMinutes, onPlay, onRate, onShare }: VideoPlayerProps) {
   const youtubeId = getYouTubeId(src);
 
-  // YouTube embed mode
   if (youtubeId) {
-    return <YouTubePlayer youtubeId={youtubeId} poster={poster} onPlay={onPlay} />;
+    return <YouTubePlayer youtubeId={youtubeId} poster={poster} durationMinutes={durationMinutes} onPlay={onPlay} onRate={onRate} onShare={onShare} />;
   }
 
-  // Native video mode (fallback)
   return <NativeVideoPlayer src={src} poster={poster} onPlay={onPlay} />;
 }
 
-function YouTubePlayer({ youtubeId, poster, onPlay }: { youtubeId: string; poster?: string; onPlay?: () => void }) {
-  const [started, setStarted] = useState(false);
+declare global {
+  interface Window { YT: any; onYouTubeIframeAPIReady: () => void; }
+}
 
-  const handlePlay = () => {
-    setStarted(true);
-    onPlay?.();
+function loadYTApi(): Promise<void> {
+  return new Promise(resolve => {
+    if (window.YT?.Player) { resolve(); return; }
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { prev?.(); resolve(); };
+    if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(s);
+    }
+  });
+}
+
+function YouTubePlayer({ youtubeId, poster, durationMinutes, onPlay, onRate, onShare }: {
+  youtubeId: string; poster?: string; durationMinutes?: number; onPlay?: () => void; onRate?: () => void; onShare?: () => void;
+}) {
+  const [started, setStarted] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [nearEnd, setNearEnd] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const intervalRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!started || !containerRef.current) return;
+
+    loadYTApi().then(() => {
+      if (playerRef.current) return;
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId: youtubeId,
+        playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+        events: {
+          onReady: (e: any) => { e.target.playVideo(); onPlay?.(); },
+          onStateChange: (e: any) => {
+            if (e.data === window.YT.PlayerState.ENDED) {
+              setEnded(true);
+              setNearEnd(false);
+              clearInterval(intervalRef.current);
+            }
+            if (e.data === window.YT.PlayerState.PLAYING) {
+              setEnded(false);
+              intervalRef.current = setInterval(() => {
+                const p = playerRef.current;
+                if (!p) return;
+                const duration = p.getDuration?.();
+                const current = p.getCurrentTime?.();
+                const threshold = (durationMinutes !== undefined && durationMinutes < 3) ? 2 : 20;
+                if (duration && current && duration - current <= threshold && !dismissed) {
+                  setNearEnd(true);
+                }
+              }, 500);
+            }
+            if (e.data === window.YT.PlayerState.PAUSED) {
+              clearInterval(intervalRef.current);
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      clearInterval(intervalRef.current);
+      playerRef.current?.destroy();
+      playerRef.current = null;
+    };
+  }, [started, youtubeId]);
+
+  const handleReplay = () => {
+    setEnded(false);
+    setNearEnd(false);
+    setDismissed(false);
+    playerRef.current?.seekTo(0);
+    playerRef.current?.playVideo();
   };
 
   if (!started) {
@@ -49,13 +123,9 @@ function YouTubePlayer({ youtubeId, poster, onPlay }: { youtubeId: string; poste
     return (
       <div
         className="relative aspect-video bg-black rounded-xl overflow-hidden cursor-pointer group"
-        onClick={handlePlay}
+        onClick={() => { setStarted(true); setEnded(false); setNearEnd(false); setDismissed(false); }}
       >
-        <img
-          src={thumbnailUrl}
-          alt="Video thumbnail"
-          className="w-full h-full object-cover"
-        />
+        <img src={thumbnailUrl} alt="Video thumbnail" className="w-full h-full object-cover" />
         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
           <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center animate-glow">
             <Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" />
@@ -65,16 +135,77 @@ function YouTubePlayer({ youtubeId, poster, onPlay }: { youtubeId: string; poste
     );
   }
 
+  const showOverlay = (nearEnd || ended) && !dismissed;
+
   return (
     <div className="relative aspect-video bg-black rounded-xl overflow-hidden">
-      <iframe
-        src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
-        title="YouTube video player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowFullScreen
-        className="w-full h-full"
-        style={{ border: 'none' }}
-      />
+      <div ref={containerRef} className="w-full h-full" />
+
+      {showOverlay && (
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.85) 100%)' }}
+        >
+          <div className="flex flex-col items-center gap-5 px-6 text-center">
+            {/* Logo */}
+            <img src={logoInstant} alt="Instant" className="h-12 object-contain opacity-90" />
+
+            {ended ? (
+              <>
+                <p className="text-white/70 text-sm">What did you think of this film?</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={onRate}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    <Star className="w-4 h-4 fill-primary-foreground" />
+                    Rate
+                  </button>
+                  <button
+                    onClick={onShare}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 text-white font-medium hover:bg-white/20 transition-colors text-sm"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+                <button
+                  onClick={handleReplay}
+                  className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors text-xs"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Watch again
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-white/70 text-sm">Did you enjoy this film?</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={onRate}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors text-sm"
+                  >
+                    <Star className="w-4 h-4 fill-primary-foreground" />
+                    Rate
+                  </button>
+                  <button
+                    onClick={onShare}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 text-white font-medium hover:bg-white/20 transition-colors text-sm"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+                <button
+                  onClick={() => setDismissed(true)}
+                  className="text-white/40 hover:text-white/70 transition-colors text-xs underline"
+                >
+                  Keep watching
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

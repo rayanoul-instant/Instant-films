@@ -160,23 +160,14 @@
   }
 
   .btn-cinema {
-    @apply relative overflow-hidden font-medium transition-all duration-300;
+    @apply relative font-medium transition-all duration-300;
     background: var(--gradient-gold);
     color: hsl(var(--primary-foreground));
   }
 
-  .btn-cinema::before {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
-    background: linear-gradient(135deg, hsl(280 60% 60%), hsl(270 70% 60%));
-  }
-
-  .btn-cinema:hover::before {
-    @apply opacity-100;
-  }
-
-  .btn-cinema span {
-    @apply relative z-10;
+  .btn-cinema:hover {
+    transform: scale(1.03);
+    filter: brightness(1.1);
   }
 
   .star-rating {

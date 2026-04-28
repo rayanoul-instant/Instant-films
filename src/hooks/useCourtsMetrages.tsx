@@ -15,11 +15,27 @@ export interface CourtMetrage {
   created_at: string;
 }
 
+export function useCourtMetrage(id: string) {
+  return useQuery({
+    queryKey: ['court_metrage', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('courts_metrages' as any)
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as CourtMetrage;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCourtsMetrages(filters?: { search?: string; genre?: string }) {
   return useQuery({
     queryKey: ['courts_metrages', filters],
     queryFn: async () => {
-      let query = (supabase as any).from('courts_metrages').select('*').order('created_at', { ascending: false });
+      let query = supabase.from('courts_metrages' as any).select('*').order('created_at', { ascending: false });
 
       if (filters?.search) {
         query = query.or(`titre.ilike.%${filters.search}%,auteur.ilike.%${filters.search}%`);

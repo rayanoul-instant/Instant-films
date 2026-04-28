@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Calendar, User, Star, Bookmark, Share2, ThumbsUp, MessageSquare, Film, ArrowUpRight, Send } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, User, Star, Bookmark, Share2, ThumbsUp, MessageSquare, Film, ArrowUpRight, Send, Trophy, Trash2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { VideoPlayer } from '@/components/films/VideoPlayer';
 import { StarRating } from '@/components/films/StarRating';
@@ -10,56 +10,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFilm, useFilmRatings, useRateFilm, useToggleFavorite, useFavorites, useAddToHistory } from '@/hooks/useFilms';
+import { useFilm, useFilmRatings, useRateFilm, useToggleFavorite, useFavorites, useAddToHistory, useTop3, useToggleTop3, useReviewLikes, useToggleReviewLike, useToggleMainstream, useDeleteFilm, useDeleteRating } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowingList } from '@/hooks/useFollowers';
-import { GENRE_LABELS } from '@/types/database';
+import { GENRE_LABELS, getFilmTitle } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-
-// Hook for review likes
-function useReviewLikes(filmId: string) {
-  return useQuery({
-    queryKey: ['review-likes', filmId],
-    queryFn: async () => {
-      const { data } = await supabase.from('review_likes').select('*');
-      return data || [];
-    },
-  });
-}
-
-function useToggleReviewLike() {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  return useMutation({
-    mutationFn: async ({ ratingId, filmId }: { ratingId: string; filmId: string }) => {
-      if (!user) throw new Error('Must be logged in');
-      const { data: existing } = await supabase
-        .from('review_likes')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('rating_id', ratingId)
-        .single();
-
-      if (existing) {
-        await supabase.from('review_likes').delete().eq('id', existing.id);
-      } else {
-        await supabase.from('review_likes').insert({ user_id: user.id, rating_id: ratingId });
-      }
-      return filmId;
-    },
-    onSuccess: (filmId) => {
-      queryClient.invalidateQueries({ queryKey: ['review-likes', filmId] });
-    },
-  });
-}
 
 export default function FilmDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   
   const { data: film, isLoading } = useFilm(id!);
@@ -70,12 +33,25 @@ export default function FilmDetailPage() {
   const rateFilm = useRateFilm();
   const toggleFavorite = useToggleFavorite();
   const addToHistory = useAddToHistory();
+  const { data: top3 } = useTop3();
+  const toggleTop3 = useToggleTop3();
   const toggleReviewLike = useToggleReviewLike();
+  const toggleMainstream = useToggleMainstream();
+  const deleteFilm = useDeleteFilm();
+  const deleteRating = useDeleteRating();
+  const queryClient = useQueryClient();
+  const ADMIN_ID = 'bb2569f9-7fb0-485d-b728-eff242861852';
+  const isAdmin = user?.id === ADMIN_ID;
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [userRating, setUserRating] = useState(0);
   const [review, setReview] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [sentTo, setSentTo] = useState<Set<string>>(new Set());
+  const [showTop3Popup, setShowTop3Popup] = useState(false);
+  const rateRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const isFavorited = favorites?.some((f) => f.film_id === id);
 
@@ -106,17 +82,40 @@ export default function FilmDetailPage() {
   const handleSendFilm = async (receiverId: string, receiverUsername: string) => {
     if (!user || !film) return;
     const filmUrl = `${window.location.origin}/films/${id}`;
-    const message = `🎬 [film:${id}:${film.title}:${film.thumbnail_url || ''}]`;
+    const message = `🎬 [film:${id}:${getFilmTitle(film)}:${film.thumbnail_url || ''}]`;
     await supabase.from('messages').insert({
       sender_id: user.id,
       receiver_id: receiverId,
       content: message,
     });
     toast.success(`Film shared with ${receiverUsername}!`);
-    setShowShareModal(false);
+    setSentTo(prev => new Set(prev).add(receiverId));
   };
 
   const handlePlay = () => { if (user) addToHistory.mutate(id!); };
+
+  const isInTop3 = top3?.some(f => f.film_id === id) || false;
+
+  const handleTop3 = () => {
+    if (!user) { toast.error('Sign in to manage your Top 3'); return; }
+    if (isInTop3) {
+      toggleTop3.mutate(id!);
+      return;
+    }
+    if ((top3?.length || 0) < 3) {
+      toggleTop3.mutate(id!);
+      toast.success('Added to your Top 3!');
+      return;
+    }
+    setShowTop3Popup(true);
+  };
+
+  const handleReplaceTop3 = async (replaceFilmId: string) => {
+    await toggleTop3.mutateAsync(replaceFilmId);
+    await toggleTop3.mutateAsync(id!);
+    toast.success('Top 3 updated!');
+    setShowTop3Popup(false);
+  };
 
   const getLikesForRating = (ratingId: string) => 
     reviewLikes?.filter(l => l.rating_id === ratingId).length || 0;
@@ -154,20 +153,34 @@ export default function FilmDetailPage() {
   return (
     <Layout>
       <div className="container px-4 py-8">
-        <Link to="/search" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
-          Back to catalog
-        </Link>
+          Back
+        </button>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <VideoPlayer src={film.video_url} poster={film.thumbnail_url || undefined} onPlay={handlePlay} />
+          <VideoPlayer
+            src={film.video_url}
+            poster={film.thumbnail_url || undefined}
+            durationMinutes={film.duration_minutes}
+            onPlay={handlePlay}
+            onRate={() => {
+              setShowReviewForm(true);
+              setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            }}
+            onShare={() => {
+              if (!user) { toast.error('Sign in to share'); return; }
+              setShowShareModal(true);
+              setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            }}
+          />
         </motion.div>
 
         {/* Title + meta */}
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
             <div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{film.title}</h1>
+              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{getFilmTitle(film)}</h1>
               {film.director && (
                 <p className="text-lg text-muted-foreground flex items-center gap-2">
                   <User className="w-4 h-4" />{film.director}
@@ -207,6 +220,61 @@ export default function FilmDetailPage() {
               </Badge>
             ))}
           </div>
+
+          {isAdmin && (
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => toggleMainstream.mutate({ filmId: film.id, genres: film.genres || [] })}
+                className={cn(
+                  'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+                  (film.genres || []).includes('mainstream')
+                    ? 'bg-yellow-500/20 border-yellow-500 text-yellow-400 hover:bg-yellow-500/30'
+                    : 'bg-secondary border-border text-muted-foreground hover:border-yellow-500 hover:text-yellow-400'
+                )}
+              >
+                {(film.genres || []).includes('mainstream') ? '★ Mainstream (retirer)' : '☆ Marquer Mainstream'}
+              </button>
+              <button
+                onClick={() => toggleMainstream.mutate({ filmId: film.id, genres: film.genres || [], tag: 'kid' })}
+                className={cn(
+                  'px-3 py-1 rounded-full text-xs font-medium border transition-colors',
+                  (film.genres || []).includes('kid')
+                    ? 'bg-blue-500/20 border-blue-500 text-blue-400 hover:bg-blue-500/30'
+                    : 'bg-secondary border-border text-muted-foreground hover:border-blue-500 hover:text-blue-400'
+                )}
+              >
+                {(film.genres || []).includes('kid') ? '★ Kid (retirer)' : '☆ Marquer Kid'}
+              </button>
+
+              {!confirmDelete ? (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
+                >
+                  🗑 Supprimer
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-destructive font-medium">Confirmer ?</span>
+                  <button
+                    onClick={async () => {
+                      await deleteFilm.mutateAsync(film.id);
+                      navigate('/search');
+                    }}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
+                  >
+                    Oui, supprimer
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {film.synopsis && (
@@ -216,12 +284,17 @@ export default function FilmDetailPage() {
           </div>
         )}
 
-        {/* ===== ACTION BUTTONS: RATE & REVIEW / SHARE ===== */}
-        <div className="flex gap-3 mb-8">
+        {/* ===== ACTION BUTTONS: RATE & REVIEW / SHARE / TOP 3 ===== */}
+        <div ref={rateRef} className="flex gap-3 mb-8">
           <Button
-            onClick={() => setShowReviewForm(true)}
-            className="btn-cinema flex-1"
+            onClick={() => {
+              if (showReviewForm) { setShowReviewForm(false); return; }
+              setShowShareModal(false);
+              setShowReviewForm(true);
+              setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            }}
             size="lg"
+            className={`btn-cinema flex-1 transition-all ${showReviewForm ? 'brightness-75' : ''}`}
           >
             <Star className="w-4 h-4 mr-2 fill-primary-foreground" />
             Rate & Review
@@ -229,30 +302,79 @@ export default function FilmDetailPage() {
           <Button
             onClick={() => {
               if (!user) { toast.error('Sign in to share'); return; }
+              if (showShareModal) { setShowShareModal(false); return; }
+              setShowReviewForm(false);
               setShowShareModal(true);
+              setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
             }}
-            variant="outline"
             size="lg"
-            className="flex-1 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            className={`btn-cinema flex-1 transition-all ${showShareModal ? 'brightness-75' : ''}`}
           >
             <ArrowUpRight className="w-4 h-4 mr-2" />
             Share
           </Button>
         </div>
 
-        {/* Rating/Review Form */}
-        {showReviewForm && (
+        {/* Top 3 replacement popup */}
+        {showTop3Popup && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="cinema-card p-6 mb-8"
           >
-            <h3 className="font-display text-lg font-semibold mb-4">Rate & Review</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-semibold">Replace a Top 3 film</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowTop3Popup(false)}>✕</Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">Your Top 3 is full. Which film do you want to replace?</p>
+            <div className="space-y-2">
+              {(top3 || []).map((fav) => fav.film && (
+                <button
+                  key={fav.id}
+                  onClick={() => handleReplaceTop3(fav.film_id)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg bg-secondary hover:bg-muted transition-colors text-left"
+                >
+                  <div className="w-12 h-8 rounded overflow-hidden flex-shrink-0 bg-muted">
+                    {fav.film.thumbnail_url && <img src={fav.film.thumbnail_url} alt="" className="w-full h-full object-cover" />}
+                  </div>
+                  <span className="flex-1 text-sm font-medium truncate">{getFilmTitle(fav.film)}</span>
+                  <span className="text-xs text-destructive font-medium">Replace</span>
+                </button>
+              ))}
+            </div>
+            <Button variant="outline" className="mt-4 w-full border-border" onClick={() => setShowTop3Popup(false)}>
+              Cancel
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Rating/Review Form */}
+        {showReviewForm && (
+          <motion.div
+            ref={panelRef}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="cinema-card p-6 mb-8"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-display text-lg font-semibold">Rate & Review</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>✕</Button>
+            </div>
             {user ? (
               <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Your rating</p>
-                  <StarRating rating={userRating} size="lg" interactive onRatingChange={setUserRating} />
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">Your rating</p>
+                    <StarRating rating={userRating} size="lg" interactive onRatingChange={setUserRating} />
+                  </div>
+                  <button
+                    onClick={handleTop3}
+                    className="flex flex-col items-center gap-1 group flex-shrink-0"
+                    title={isInTop3 ? 'Remove from Top 3' : 'Add to Top 3'}
+                  >
+                    <Trophy className={cn('w-7 h-7 transition-all', isInTop3 ? 'text-yellow-400' : 'text-muted-foreground group-hover:text-yellow-400')} />
+                    <span className="text-xs text-muted-foreground">Top 3</span>
+                  </button>
                 </div>
                 <Textarea
                   placeholder="Write your review (optional)..."
@@ -263,7 +385,6 @@ export default function FilmDetailPage() {
                 />
                 <div className="flex gap-2">
                   <Button onClick={handleRate} className="btn-cinema flex-1">Submit</Button>
-                  <Button variant="outline" onClick={() => setShowReviewForm(false)} className="border-border">Cancel</Button>
                 </div>
               </div>
             ) : (
@@ -277,6 +398,7 @@ export default function FilmDetailPage() {
         {/* Share Modal - shows following list */}
         {showShareModal && (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             className="cinema-card p-6 mb-8"
@@ -290,7 +412,7 @@ export default function FilmDetailPage() {
               Copy link to clipboard
             </Button>
             <div>
-              <p className="text-sm text-muted-foreground mb-3"><span className="font-bold text-foreground">Send</span> to someone you follow:</p>
+              <p className="text-sm text-muted-foreground mb-3"><span className="font-bold text-foreground">Send</span> to a friend:</p>
               {(followingList || []).length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">You're not following anyone yet.</p>
               ) : (
@@ -305,12 +427,12 @@ export default function FilmDetailPage() {
                         size="sm"
                         color={u.avatar_accessories?.color}
                         hat={u.avatar_accessories?.hat}
-                        face={u.avatar_accessories?.face}
-                        extra={u.avatar_accessories?.extra}
+                        glasses={u.avatar_accessories?.glasses}
+                        mask={u.avatar_accessories?.mask}
                       />
                       <span className="text-sm font-medium">{u.username}</span>
-                      <span className="ml-auto flex items-center justify-center gap-1 text-xs text-primary font-medium">
-                        <Send className="w-3 h-3" /> Send
+                      <span className={cn("ml-auto flex items-center justify-center gap-1 text-xs font-medium", sentTo.has(u.id) ? "text-muted-foreground" : "text-primary")}>
+                        <Send className="w-3 h-3" /> {sentTo.has(u.id) ? 'Sent' : 'Send'}
                       </span>
                     </button>
                   ))}
@@ -336,8 +458,8 @@ export default function FilmDetailPage() {
                           size="sm"
                           color={(rating.profile as any)?.avatar_accessories?.color}
                           hat={(rating.profile as any)?.avatar_accessories?.hat}
-                          face={(rating.profile as any)?.avatar_accessories?.face}
-                          extra={(rating.profile as any)?.avatar_accessories?.extra}
+                          glasses={(rating.profile as any)?.avatar_accessories?.glasses}
+                          mask={(rating.profile as any)?.avatar_accessories?.mask}
                         />
                       </Link>
                       <div>
@@ -356,7 +478,18 @@ export default function FilmDetailPage() {
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(rating.created_at), { addSuffix: true })}
                       </span>
-                      {rating.user_id !== user?.id && (
+                      {rating.user_id === user?.id ? (
+                        <button
+                          onClick={() => {
+                            if (confirm('Delete your review?')) {
+                              deleteRating.mutate({ ratingId: rating.id, filmId: id! });
+                            }
+                          }}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
                         <button
                           onClick={() => {
                             if (!user) { toast.error('Sign in to like reviews'); return; }
@@ -364,8 +497,8 @@ export default function FilmDetailPage() {
                           }}
                           className={cn(
                             "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors",
-                            isLikedByMe(rating.id) 
-                              ? "bg-primary/15 text-primary" 
+                            isLikedByMe(rating.id)
+                              ? "bg-primary/15 text-primary"
                               : "bg-secondary hover:bg-primary/10 text-muted-foreground hover:text-primary"
                           )}
                         >

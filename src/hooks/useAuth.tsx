@@ -56,10 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (!error && data) {
-      setProfile({
-        ...data,
-        avatar_accessories: (data.avatar_accessories as string[]) || [],
-      });
+      setProfile(data as Profile);
     }
   };
 
@@ -99,10 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(updates as Partial<Profile>)
       .eq('id', user.id);
 
-    if (!error) {
+    if (error) {
+      console.error('updateProfile error:', error);
+    } else {
       setProfile((prev) => prev ? { ...prev, ...updates } : null);
     }
 

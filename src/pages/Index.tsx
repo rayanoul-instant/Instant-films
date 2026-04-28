@@ -2,20 +2,20 @@ import { useState, useEffect } from 'react';
 import heroBg from '@/assets/hero-bg.png';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Star, ArrowRight, TrendingUp, Sparkles, MessageSquare } from 'lucide-react';
+import { Star, ArrowRight, TrendingUp, Sparkles, MessageSquare, ThumbsUp } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
+import { AvatarDisplay } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useFeaturedFilms, useFilms, useFilmRatings } from '@/hooks/useFilms';
+import { useFeaturedFilms, useFilms, useTopReviews, useRecommendations } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import logoInstant from '@/assets/logo-instant.png';
 
 const Index = () => {
   const { user } = useAuth();
   const { data: popularFilms, isLoading: loadingPopular } = useFilms({ sortBy: 'popular' });
-  const { data: recentFilms, isLoading: loadingRecent } = useFilms({ sortBy: 'newest' });
   const { data: featuredFilms } = useFeaturedFilms();
+  const { data: recommendations, isLoading: loadingRec } = useRecommendations();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -104,7 +104,7 @@ const Index = () => {
             </Link>
           </div>
 
-          {loadingRecent ? (
+          {loadingRec ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-[16/9] rounded-xl bg-muted animate-pulse" />
@@ -112,7 +112,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(featuredFilms || recentFilms)?.slice(0, 4).map((film) => (
+              {(recommendations || featuredFilms)?.slice(0, 4).map((film) => (
                 <FilmCard key={film.id} film={film} />
               ))}
             </div>
@@ -154,18 +154,15 @@ const Index = () => {
 };
 
 function TopReviews() {
-  const { data: films } = useFilms({ sortBy: 'popular' });
-  const firstFilmId = films?.[0]?.id;
-  const { data: ratings } = useFilmRatings(firstFilmId || '');
-  const displayReviews = ratings?.slice(0, 3);
+  const { data: reviews = [], isLoading } = useTopReviews(3);
 
-  if (!displayReviews || displayReviews.length === 0) {
+  if (isLoading) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="cinema-card p-4">
+          <div key={i} className="cinema-card p-4 animate-pulse">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-muted" />
+              <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="h-3 w-24 bg-muted rounded" />
                 <div className="h-3 w-full bg-muted rounded" />
@@ -174,16 +171,21 @@ function TopReviews() {
             </div>
           </div>
         ))}
-        <p className="text-center text-muted-foreground text-sm py-2">
-          No reviews yet. Be the first to rate a film!
-        </p>
       </div>
+    );
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <p className="text-center text-muted-foreground text-sm py-8">
+        No highly liked reviews yet. Be the first!
+      </p>
     );
   }
 
   return (
     <div className="space-y-3">
-      {displayReviews.map((review) => (
+      {reviews.map((review: any) => (
         <motion.div
           key={review.id}
           initial={{ opacity: 0, y: 10 }}
@@ -191,19 +193,26 @@ function TopReviews() {
           className="cinema-card p-4"
         >
           <div className="flex items-start gap-3">
-            <Avatar className="w-10 h-10 flex-shrink-0">
-              <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                {review.profile?.username?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
+            <AvatarDisplay
+              color={review.profile?.avatar_accessories?.color}
+              hat={review.profile?.avatar_accessories?.hat}
+              glasses={review.profile?.avatar_accessories?.glasses}
+              mask={review.profile?.avatar_accessories?.mask}
+              size="sm"
+            />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1">
-                <span className="font-semibold text-sm">
+                <Link to={`/user/${review.user_id}`} className="font-semibold text-sm hover:text-primary transition-colors">
                   {review.profile?.username || 'User'}
-                </span>
-                <div className="flex items-center gap-1 text-primary">
-                  <Star className="w-3 h-3 fill-primary" />
-                  <span className="text-xs font-medium">{review.rating}/10</span>
+                </Link>
+                <div className="flex items-center gap-2">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <ThumbsUp className="w-3 h-3" />{review.likesCount}
+                  </span>
+                  <div className="flex items-center gap-1 text-primary">
+                    <Star className="w-3 h-3 fill-primary" />
+                    <span className="text-xs font-medium">{Math.round(review.rating / 2)}/5</span>
+                  </div>
                 </div>
               </div>
               {review.review && (
@@ -213,7 +222,7 @@ function TopReviews() {
                 to={`/films/${review.film_id}`}
                 className="text-xs text-primary hover:underline mt-1 inline-block"
               >
-                View film →
+                {review.film?.title || 'View film'} →
               </Link>
             </div>
           </div>

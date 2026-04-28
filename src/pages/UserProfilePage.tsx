@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Heart, Users, ThumbsUp, ChevronDown, MessageCircle, Eye } from 'lucide-react';
@@ -7,9 +7,9 @@ import { FilmCard } from '@/components/films/FilmCard';
 import { AvatarDisplay } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useFriendsCount, useIsFollowing, useToggleFollow } from '@/hooks/useFollowers';
+import { useFriendsCount, useFriendRequestStatus, useSendFriendRequest, useToggleFollow } from '@/hooks/useFollowers';
+import { useUserProfile } from '@/hooks/useProfile';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -19,68 +19,36 @@ export default function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { data: friendsCount = 0 } = useFriendsCount(id!);
-  const { data: isFollowing = false } = useIsFollowing(id!);
+  const { data: friendStatus = 'none' } = useFriendRequestStatus(id!);
+  const sendRequestMutation = useSendFriendRequest();
   const toggleFollowMutation = useToggleFollow();
-
-  const [profile, setProfile] = useState<any>(null);
-  const [favorites, setFavorites] = useState<any[]>([]);
-  const [ratings, setRatings] = useState<any[]>([]);
-  const [reviewLikes, setReviewLikes] = useState<any[]>([]);
-  const [watchCount, setWatchCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { data: profileData, isLoading: loading } = useUserProfile(id!);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
-  useEffect(() => {
-    if (id) loadProfile();
-  }, [id]);
-
-  const loadProfile = async () => {
-    setLoading(true);
-    const [profileRes, ratingsRes, likesRes, watchRes] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', id!).single(),
-      supabase
-        .from('film_ratings')
-        .select('*, film:films(id, title, thumbnail_url, director)')
-        .eq('user_id', id!)
-        .order('created_at', { ascending: false })
-        .limit(20),
-      supabase.from('review_likes').select('*'),
-      supabase.from('watch_history').select('id', { count: 'exact', head: true }).eq('user_id', id!),
-    ]);
-
-    setProfile(profileRes.data);
-    setRatings(ratingsRes.data || []);
-    setReviewLikes(likesRes.data || []);
-    setWatchCount(watchRes.count || 0);
-
-    const { data: favData } = await supabase
-      .from('favorites')
-      .select('*, film:films(*)')
-      .eq('user_id', id!)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    setFavorites(favData || []);
-    setLoading(false);
-  };
+  const profile = profileData?.profile;
+  const ratings = profileData?.ratings || [];
+  const watchCount = profileData?.watchCount || 0;
+  const favorites = profileData?.favorites || [];
 
   const handleFollow = () => {
     if (!user) { toast.error('Sign in to follow users'); return; }
-    toggleFollowMutation.mutate(id!);
+    if (friendStatus === 'friends') {
+      toggleFollowMutation.mutate(id!);
+    } else if (friendStatus === 'none') {
+      sendRequestMutation.mutate(id!, {
+        onSuccess: () => toast.success('Friend request sent!'),
+        onError: () => toast.error('Could not send request'),
+      });
+    }
   };
 
-  const getLikesForRating = (ratingId: string) =>
-    reviewLikes.filter(l => l.rating_id === ratingId).length;
-
-  // Sort reviews: most liked first, then by date
-  const sortedByLikes = [...ratings].sort(
-    (a, b) => getLikesForRating(b.id) - getLikesForRating(a.id)
-  );
+  // Sort reviews: most liked first
+  const sortedByLikes = [...ratings].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
   const topReview = sortedByLikes[0];
   const recentReviews = showAllReviews ? ratings.slice(1) : ratings.slice(1, 4);
 
-  // Average rating on /5
   const avgRating = ratings.length
-    ? (ratings.reduce((s, r) => s + r.rating, 0) / ratings.length / 2).toFixed(1)
+    ? (ratings.reduce((s: number, r: any) => s + r.rating, 0) / ratings.length / 2).toFixed(1)
     : null;
 
   const topFavorites = favorites.slice(0, 3);
@@ -114,8 +82,8 @@ export default function UserProfilePage() {
 
   const avatarColor = profile.avatar_accessories?.color || '#7C3AED';
   const avatarHat = profile.avatar_accessories?.hat;
-  const avatarFace = profile.avatar_accessories?.face;
-  const avatarExtra = profile.avatar_accessories?.extra;
+  const avatarGlasses = profile.avatar_accessories?.glasses;
+  const avatarMask = profile.avatar_accessories?.mask;
 
   return (
     <Layout>
@@ -130,8 +98,8 @@ export default function UserProfilePage() {
             <AvatarDisplay
               color={avatarColor}
               hat={avatarHat}
-              face={avatarFace}
-              extra={avatarExtra}
+              glasses={avatarGlasses}
+              mask={avatarMask}
               size="xl"
             />
 
@@ -148,17 +116,18 @@ export default function UserProfilePage() {
                 {user && user.id !== id && (
                   <div className="flex gap-2">
                     <Button
-                      variant={isFollowing ? 'outline' : 'default'}
+                      variant={friendStatus === 'none' ? 'default' : 'outline'}
                       size="sm"
                       onClick={handleFollow}
-                      className={isFollowing ? 'border-border' : 'btn-cinema'}
+                      disabled={friendStatus === 'pending_sent'}
+                      className={friendStatus === 'none' ? 'btn-cinema' : 'border-border'}
                     >
-                      {isFollowing ? 'Friends' : 'Add friend'}
+                      {friendStatus === 'friends' ? 'Friends' : friendStatus === 'pending_sent' ? 'Request sent' : 'Add friend'}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate('/messages')}
+                      onClick={() => navigate(`/messages?with=${id}`)}
                       className="border-border"
                     >
                       <MessageCircle className="w-4 h-4 mr-1" /> Message
@@ -223,7 +192,7 @@ export default function UserProfilePage() {
                     <ThumbsUp className="w-3.5 h-3.5 text-primary fill-primary" />
                     <span className="text-xs text-primary font-medium">Most liked</span>
                   </div>
-                  <ReviewItem r={topReview} likes={getLikesForRating(topReview.id)} />
+                  <ReviewItem r={topReview} likes={0} />
                 </div>
               )}
 
@@ -232,7 +201,7 @@ export default function UserProfilePage() {
                 <>
                   {recentReviews.map((r) => (
                     <div key={r.id} className="cinema-card p-4">
-                      <ReviewItem r={r} likes={getLikesForRating(r.id)} />
+                      <ReviewItem r={r} likes={0} />
                     </div>
                   ))}
 

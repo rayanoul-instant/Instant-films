@@ -3,8 +3,9 @@ import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useCourtsMetrages } from '@/hooks/useCourtsMetrages';
-import { motion } from 'framer-motion';
+import { VideoPlayer } from '@/components/films/VideoPlayer';
+import { useCourtMetrage } from '@/hooks/useCourtsMetrages';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const GENRE_LABELS: Record<string, string> = {
   drama: 'Drama', comedy: 'Comedy', horror: 'Horror', scifi: 'Sci-Fi',
@@ -12,17 +13,9 @@ const GENRE_LABELS: Record<string, string> = {
   fantasy: 'Fantasy', documentary: 'Documentary', experimental: 'Experimental',
 };
 
-function getYoutubeId(url: string | null) {
-  if (!url) return null;
-  const match = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
-  return match ? match[1] : null;
-}
-
 export default function CourtMetrageDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: films, isLoading } = useCourtsMetrages();
-  const film = films?.find(f => f.id === id);
-  const ytId = getYoutubeId(film?.lien ?? null);
+  const { data: film, isLoading } = useCourtMetrage(id!);
 
   if (isLoading) {
     return (
@@ -50,7 +43,14 @@ export default function CourtMetrageDetailPage() {
 
   return (
     <Layout>
-      <div className="container px-4 py-8">
+      <AnimatePresence mode="wait">
+      <motion.div
+        key={film.id}
+        className="container px-4 py-8"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
         <Link
           to="/search"
           className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -59,29 +59,16 @@ export default function CourtMetrageDetailPage() {
           Back to catalog
         </Link>
 
-        {/* Player YouTube intégré */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-            {ytId ? (
-              <iframe
-                src={`https://www.youtube.com/embed/${ytId}`}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                Vidéo non disponible
-              </div>
-            )}
-          </div>
-        </motion.div>
+        <div className="mb-8">
+          {film.lien ? (
+            <VideoPlayer src={film.lien} poster={film.thumbnail_url || undefined} />
+          ) : (
+            <div className="aspect-video rounded-xl bg-black flex items-center justify-center text-muted-foreground">
+              Video unavailable
+            </div>
+          )}
+        </div>
 
-        {/* Titre + meta */}
         <div className="mb-6">
           <h1 className="font-display text-2xl md:text-3xl font-bold mb-3">{film.titre}</h1>
 
@@ -99,10 +86,8 @@ export default function CourtMetrageDetailPage() {
 
           {film.genres?.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
-              {film.genres.map(g => (
-                <Badge key={g} variant="secondary">
-                  {GENRE_LABELS[g] ?? g}
-                </Badge>
+              {film.genres.map((g: string) => (
+                <Badge key={g} variant="secondary">{GENRE_LABELS[g] ?? g}</Badge>
               ))}
             </div>
           )}
@@ -121,7 +106,8 @@ export default function CourtMetrageDetailPage() {
             <p className="text-muted-foreground leading-relaxed">{film.synopsis}</p>
           </div>
         )}
-      </div>
+      </motion.div>
+      </AnimatePresence>
     </Layout>
   );
 }
