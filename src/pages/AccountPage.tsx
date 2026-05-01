@@ -342,7 +342,7 @@ export default function AccountPage() {
             </div>
           ) : (
             <div>
-              <div className="flex flex-row gap-6 items-start">
+              <div className="flex flex-row gap-4 items-center">
                 <AvatarDisplay
                   color={currentAcc?.color}
                   hat={currentAcc?.hat}
@@ -351,7 +351,7 @@ export default function AccountPage() {
                   size="xl"
                 />
                 <div className="flex-1">
-                  <div className="flex items-start justify-between mb-3 gap-3">
+                  <div className="flex items-start justify-between mb-2 gap-2">
                     <div>
                       <h1 className="font-display text-2xl md:text-3xl font-bold mb-1">
                         {profile?.username || 'User'}
@@ -371,7 +371,7 @@ export default function AccountPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-5">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => { setFriendsTab('friends'); setShowFriendsDrawer(true); }}
