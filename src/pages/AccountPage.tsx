@@ -360,11 +360,13 @@ export default function AccountPage() {
                       {profile?.bio && <p className="text-muted-foreground text-sm mt-1">{profile.bio}</p>}
                     </div>
                     <div className="flex flex-col gap-2 flex-shrink-0">
-                      <Button variant="outline" size="sm" onClick={openEdit} className="border-border">
-                        <Edit2 className="w-4 h-4 mr-2" /> Edit
+                      <Button variant="outline" size="sm" onClick={openEdit} className="border-border px-2 sm:px-3">
+                        <Edit2 className="w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Edit</span>
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => setShowSettings(true)} className="border-border">
-                        <Settings className="w-4 h-4 mr-2" /> Settings
+                      <Button variant="outline" size="sm" onClick={() => setShowSettings(true)} className="border-border px-2 sm:px-3">
+                        <Settings className="w-4 h-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Settings</span>
                       </Button>
                     </div>
                   </div>
