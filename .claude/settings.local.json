@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"c:/Users/rayan/OneDrive/Documents/Instant/Instant-films/\"*.csv)",
+      "Bash(ls \"c:/Users/rayan/OneDrive/Documents/Instant/Instant-films/scripts/\"*.csv)"
+    ]
+  }
+}
