@@ -33,6 +33,7 @@ export interface Profile {
   bio: string | null;
   avatar_base: string;
   avatar_accessories: AvatarAccessories | null;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

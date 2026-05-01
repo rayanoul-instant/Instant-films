@@ -9,8 +9,6 @@ import { useToggleFavorite, useFavorites, useToggleMainstream, useDeleteFilm } f
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
-const ADMIN_ID = 'bb2569f9-7fb0-485d-b728-eff242861852';
-
 interface FilmCardProps {
   film: Film;
   featured?: boolean;
@@ -18,7 +16,7 @@ interface FilmCardProps {
 }
 
 export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardProps) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
@@ -26,7 +24,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
   const deleteFilm = useDeleteFilm();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const isAdmin = user?.id === ADMIN_ID;
+  const isAdmin = profile?.is_admin === true;
   const isFavorited = favorites?.some((f) => f.film_id === film.id);
   const isMainstream = (film.genres || []).includes('mainstream');
   const isKid = (film.genres || []).includes('kid');

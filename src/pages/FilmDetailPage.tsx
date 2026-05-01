@@ -23,7 +23,7 @@ import { formatDistanceToNow } from 'date-fns';
 export default function FilmDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   
   const { data: film, isLoading } = useFilm(id!);
   const { data: ratings } = useFilmRatings(id!);
@@ -40,8 +40,7 @@ export default function FilmDetailPage() {
   const deleteFilm = useDeleteFilm();
   const deleteRating = useDeleteRating();
   const queryClient = useQueryClient();
-  const ADMIN_ID = 'bb2569f9-7fb0-485d-b728-eff242861852';
-  const isAdmin = user?.id === ADMIN_ID;
+  const isAdmin = profile?.is_admin === true;
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [userRating, setUserRating] = useState(0);
