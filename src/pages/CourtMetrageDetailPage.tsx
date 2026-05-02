@@ -13,6 +13,14 @@ const GENRE_LABELS: Record<string, string> = {
   fantasy: 'Fantasy', documentary: 'Documentary', experimental: 'Experimental',
 };
 
+function parseDureeToMinutes(duree: string): number {
+  if (duree.includes(':')) {
+    const [min, sec] = duree.split(':').map(Number);
+    return min + (sec || 0) / 60;
+  }
+  return parseFloat(duree) || 0;
+}
+
 export default function CourtMetrageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: film, isLoading } = useCourtMetrage(id!);
@@ -61,7 +69,11 @@ export default function CourtMetrageDetailPage() {
 
         <div className="mb-8">
           {film.lien ? (
-            <VideoPlayer src={film.lien} poster={film.thumbnail_url || undefined} />
+            <VideoPlayer
+              src={film.lien}
+              poster={film.thumbnail_url || undefined}
+              durationMinutes={film.duree ? parseDureeToMinutes(film.duree) : undefined}
+            />
           ) : (
             <div className="aspect-video rounded-xl bg-black flex items-center justify-center text-muted-foreground">
               Video unavailable
