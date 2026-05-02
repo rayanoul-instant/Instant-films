@@ -497,9 +497,17 @@ export function useSetGenres() {
       const { error } = await supabase.from('films').update({ genres }).eq('id', filmId);
       if (error) throw error;
     },
-    onSuccess: (_, { filmId }) => {
-      queryClient.invalidateQueries({ queryKey: ['film', filmId] });
-      queryClient.invalidateQueries({ queryKey: ['films'] });
+    onSuccess: (_, { filmId, genres }) => {
+      // Patch all film lists in-place — no refetch, no reorder
+      queryClient.setQueriesData(
+        { queryKey: ['films'] },
+        (old: Film[] | undefined) => old?.map(f => f.id === filmId ? { ...f, genres } : f)
+      );
+      // Patch the individual film page too
+      queryClient.setQueryData(
+        ['film', filmId],
+        (old: Film | undefined) => old ? { ...old, genres } : old
+      );
     },
   });
 }
