@@ -490,6 +490,20 @@ export function useToggleMainstream() {
   });
 }
 
+export function useSetGenres() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ filmId, genres }: { filmId: string; genres: string[] }) => {
+      const { error } = await supabase.from('films').update({ genres }).eq('id', filmId);
+      if (error) throw error;
+    },
+    onSuccess: (_, { filmId }) => {
+      queryClient.invalidateQueries({ queryKey: ['film', filmId] });
+      queryClient.invalidateQueries({ queryKey: ['films'] });
+    },
+  });
+}
+
 export function useAddToHistory() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

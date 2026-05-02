@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, Star, Play, Bookmark, Trophy, Trash2 } from 'lucide-react';
-import { Film, GENRE_LABELS, getFilmTitle } from '@/types/database';
+import { Clock, Star, Play, Bookmark, Trophy, Trash2, Tag, X } from 'lucide-react';
+import { Film, FilmGenre, GENRE_LABELS, getFilmTitle } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useToggleFavorite, useFavorites, useToggleMainstream, useDeleteFilm } from '@/hooks/useFilms';
+import { useToggleFavorite, useFavorites, useSetGenres, useDeleteFilm } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+
+const ALL_GENRES = Object.keys(GENRE_LABELS) as FilmGenre[];
 
 interface FilmCardProps {
   film: Film;
@@ -20,14 +22,22 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
   const navigate = useNavigate();
   const { data: favorites } = useFavorites();
   const toggleFavorite = useToggleFavorite();
-  const toggleMainstream = useToggleMainstream();
+  const setGenres = useSetGenres();
   const deleteFilm = useDeleteFilm();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showGenrePicker, setShowGenrePicker] = useState(false);
 
   const isAdmin = profile?.is_admin === true;
   const isFavorited = favorites?.some((f) => f.film_id === film.id);
-  const isMainstream = (film.genres || []).includes('mainstream');
-  const isKid = (film.genres || []).includes('kid');
+  const currentGenres: FilmGenre[] = (film.genres || []) as FilmGenre[];
+
+  const handleToggleGenre = (genre: FilmGenre) => {
+    const isActive = currentGenres.includes(genre);
+    const newGenres = isActive
+      ? currentGenres.filter(g => g !== genre)
+      : currentGenres.length >= 3 ? currentGenres : [...currentGenres, genre];
+    setGenres.mutate({ filmId: film.id, genres: newGenres });
+  };
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,7 +57,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
       whileHover={{ y: -4 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "cinema-card group",
+        "cinema-card group relative",
         featured ? "col-span-2 row-span-2" : ""
       )}
     >
@@ -119,31 +129,24 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
           {/* Admin buttons */}
           {isAdmin && (
             <div
-              className="absolute inset-0 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 bg-black/40"
+              className={cn(
+                "absolute inset-0 z-20 transition-opacity flex flex-col justify-between p-2 bg-black/40",
+                showGenrePicker ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}
               onClick={(e) => e.preventDefault()}
             >
-              <div className="flex gap-1 flex-wrap">
+              <div className="flex justify-end">
                 <button
-                  onClick={(e) => handleAdminAction(e, () => toggleMainstream.mutate({ filmId: film.id, genres: film.genres || [], tag: 'mainstream' }))}
+                  onClick={(e) => handleAdminAction(e, () => setShowGenrePicker(v => !v))}
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors',
-                    isMainstream
-                      ? 'bg-yellow-500/30 border-yellow-500 text-yellow-300'
-                      : 'bg-black/50 border-white/30 text-white/80 hover:border-yellow-500 hover:text-yellow-300'
+                    'p-1.5 rounded-lg border transition-colors',
+                    showGenrePicker || currentGenres.length > 0
+                      ? 'bg-primary/30 border-primary text-primary'
+                      : 'bg-black/50 border-white/30 text-white/70 hover:border-primary hover:text-primary'
                   )}
+                  title="Modifier les genres"
                 >
-                  {isMainstream ? '★ Mainstream' : '☆ Mainstream'}
-                </button>
-                <button
-                  onClick={(e) => handleAdminAction(e, () => toggleMainstream.mutate({ filmId: film.id, genres: film.genres || [], tag: 'kid' }))}
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors',
-                    isKid
-                      ? 'bg-blue-500/30 border-blue-500 text-blue-300'
-                      : 'bg-black/50 border-white/30 text-white/80 hover:border-blue-500 hover:text-blue-300'
-                  )}
-                >
-                  {isKid ? '★ Kid' : '☆ Kid'}
+                  <Tag className="w-3.5 h-3.5" />
                 </button>
               </div>
 
@@ -223,6 +226,50 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
           )}
         </div>
       </Link>
+
+      {/* Genre picker overlay — full card */}
+      {isAdmin && showGenrePicker && (
+        <div
+          className="absolute inset-0 z-30 rounded-xl bg-black/95 p-3 flex flex-col gap-2"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-white">
+              Genres <span className="text-white/40">({currentGenres.length}/3)</span>
+            </span>
+            <button
+              onClick={() => setShowGenrePicker(false)}
+              className="p-0.5 rounded text-white/50 hover:text-white transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {ALL_GENRES.map((genre) => {
+              const isActive = currentGenres.includes(genre);
+              const atMax = currentGenres.length >= 3 && !isActive;
+              return (
+                <button
+                  key={genre}
+                  disabled={atMax}
+                  onClick={() => handleToggleGenre(genre)}
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-[10px] font-medium border transition-colors',
+                    isActive
+                      ? 'bg-primary border-primary text-white'
+                      : atMax
+                      ? 'bg-transparent border-white/10 text-white/25 cursor-not-allowed'
+                      : 'bg-transparent border-white/30 text-white/70 hover:border-primary hover:text-primary'
+                  )}
+                >
+                  {GENRE_LABELS[genre]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
