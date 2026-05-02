@@ -72,9 +72,12 @@ function AnimatedRoutes() {
 }
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(() =>
+    typeof window !== 'undefined' && !sessionStorage.getItem('splashSeen')
+  );
 
   const handleSplashDone = useCallback(() => {
+    sessionStorage.setItem('splashSeen', '1');
     setShowSplash(false);
   }, []);
 
