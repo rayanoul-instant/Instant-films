@@ -14,8 +14,7 @@ import { useFollowingList } from '@/hooks/useFollowers';
 import { useAuth } from '@/hooks/useAuth';
 
 const GENRES: FilmGenre[] = [
-  'drama', 'comedy', 'documentary', 'animation',
-  'thriller', 'horror', 'romance', 'scifi', 'experimental', 'fantasy', 'mainstream', 'kid'
+  'drama', 'comedy', 'animation', 'horror', 'romance', 'scifi', 'experimental', 'kid', 'mainstream'
 ];
 
 export default function SearchPage() {

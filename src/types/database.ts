@@ -1,4 +1,4 @@
-export type FilmGenre = 'drama' | 'comedy' | 'horror' | 'scifi' | 'documentary' | 'animation' | 'experimental' | 'romance' | 'thriller' | 'fantasy' | 'mainstream' | 'kid';
+export type FilmGenre = 'drama' | 'comedy' | 'animation' | 'horror' | 'romance' | 'scifi' | 'experimental' | 'kid' | 'mainstream';
 
 export interface AvatarAccessories {
   color?: string;
@@ -115,16 +115,13 @@ export const getFilmTitle = (film: Pick<Film, 'title' | 'display_title'>) =>
 export const GENRE_LABELS: Record<FilmGenre, string> = {
   drama: 'Drama',
   comedy: 'Comedy',
-  horror: 'Horror',
-  scifi: 'Sci-Fi',
-  documentary: 'Documentary',
   animation: 'Animation',
-  experimental: 'Experimental',
+  horror: 'Horror',
   romance: 'Romance',
-  thriller: 'Thriller',
-  fantasy: 'Fantasy',
-  mainstream: 'Mainstream',
+  scifi: 'Sci-Fi',
+  experimental: 'Experimental',
   kid: 'Kid',
+  mainstream: 'Mainstream',
 };
 
 export const AVATAR_BASES = ['default', 'cat', 'dog', 'robot', 'alien', 'ghost'];
