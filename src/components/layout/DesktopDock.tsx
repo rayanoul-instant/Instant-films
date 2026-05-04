@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Home, Search as SearchIcon, MessageSquareText, User } from 'lucide-react';
 import { useState } from 'react';
+import { useUnreadMessagesCount } from '@/hooks/useMessages';
 
 const dockItems = [
   { href: '/', label: 'Home', icon: Home },
@@ -13,6 +14,7 @@ const dockItems = [
 export function DesktopDock() {
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { data: unreadCount = 0 } = useUnreadMessagesCount();
 
   const isActive = (href: string) => {
     if (href === '/') return location.pathname === '/';
@@ -64,6 +66,9 @@ export function DesktopDock() {
                   }}
                   strokeWidth={active ? 2 : 1.5}
                 />
+                {item.href === '/messages' && unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                )}
               </Link>
             </div>
           );
