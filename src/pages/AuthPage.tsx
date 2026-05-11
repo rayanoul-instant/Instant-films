@@ -27,6 +27,7 @@ const signupSchema = loginSchema.extend({
 export default function AuthPage() {
   const { user, signIn, signUp, loading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [emailSentTo, setEmailSentTo] = useState<string | null>(null);
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -46,6 +47,40 @@ export default function AuthPage() {
 
   if (user) {
     return <Navigate to="/" replace />;
+  }
+
+  if (emailSentTo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-md w-full text-center space-y-6"
+        >
+          <img src={logoInstant} alt="Instant" className="h-12 mx-auto" />
+          <div className="cinema-card p-8 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
+              <Mail className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="font-display text-2xl font-bold">Vérifiez votre email</h1>
+            <p className="text-muted-foreground text-sm">
+              Un lien de confirmation a été envoyé à <span className="text-foreground font-medium">{emailSentTo}</span>.
+              Cliquez sur ce lien pour activer votre compte.
+            </p>
+            <p className="text-muted-foreground text-xs">
+              Une fois confirmé, revenez ici et connectez-vous.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full border-border"
+              onClick={() => setEmailSentTo(null)}
+            >
+              Retour à la connexion
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -101,7 +136,7 @@ export default function AuthPage() {
           toast.error(error.message);
         }
       } else {
-        toast.success('Account created! Welcome to Instant');
+        setEmailSentTo(signupEmail);
       }
     } finally {
       setIsLoading(false);
