@@ -67,7 +67,7 @@ export function DesktopDock() {
                   strokeWidth={active ? 2 : 1.5}
                 />
                 {item.href === '/messages' && unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-red-500" />
+                  <span className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500" />
                 )}
               </Link>
             </div>

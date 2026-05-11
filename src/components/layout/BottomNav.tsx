@@ -66,7 +66,7 @@ export function BottomNav() {
                   strokeWidth={active ? 2 : 1.5}
                 />
                 {item.href === '/messages' && unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full bg-red-500" />
+                  <span className="absolute top-3 right-3 w-3 h-3 rounded-full bg-red-500" />
                 )}
               </Link>
             );
