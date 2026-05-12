@@ -97,17 +97,15 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
 
           {/* Save / Bookmark Button — visible for all logged-in users */}
           {user && !isTop3 && (
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
               onClick={handleFavorite}
               className={cn(
-                "absolute top-2 right-2 z-20 transition-opacity duration-200",
+                "absolute top-2 right-2 z-20 p-1.5 rounded-lg transition-opacity duration-200 bg-transparent hover:bg-transparent active:bg-transparent",
                 isFavorited ? "opacity-100 text-accent" : "opacity-0 group-hover:opacity-60 text-foreground/80 hover:!opacity-100 hover:text-accent"
               )}
             >
               <Bookmark className={cn("w-4 h-4", isFavorited && "fill-accent")} />
-            </Button>
+            </button>
           )}
 
           {/* Top 3 gold trophy badge */}
