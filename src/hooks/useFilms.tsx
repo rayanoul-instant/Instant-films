@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Film, FilmGenre, FilmRating, ReviewLike } from '@/types/database';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export function useFilms(filters?: {
   genre?: FilmGenre;
@@ -170,27 +171,32 @@ export function useToggleFavorite() {
     mutationFn: async (filmId: string) => {
       if (!user) throw new Error('Must be logged in');
 
-      // Check if already favorited
       const { data: existing } = await supabase
         .from('favorites')
         .select('id')
         .eq('user_id', user.id)
         .eq('film_id', filmId)
-        .single();
+        .maybeSingle();
 
       if (existing) {
-        await supabase
+        const { error } = await supabase
           .from('favorites')
           .delete()
           .eq('id', existing.id);
+        if (error) throw error;
       } else {
-        await supabase
+        const { error } = await supabase
           .from('favorites')
           .insert({ user_id: user.id, film_id: filmId });
+        if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+    onError: (error: any) => {
+      console.error('Save error:', error);
+      toast.error('Failed to save — ' + (error?.message || 'unknown error'));
     },
   });
 }
