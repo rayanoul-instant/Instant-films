@@ -151,13 +151,24 @@ export function useFavorites() {
     queryKey: ['favorites', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
+
+      const { data: favs, error } = await supabase
         .from('favorites')
-        .select('*, film:films(*)')
+        .select('id, user_id, film_id, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
       if (error) throw error;
-      return data || [];
+      if (!favs || favs.length === 0) return [];
+
+      const filmIds = favs.map((f: any) => f.film_id);
+      const { data: films } = await supabase
+        .from('films')
+        .select('*')
+        .in('id', filmIds);
+
+      const filmsMap = new Map((films || []).map((f: any) => [f.id, f]));
+      return favs.map((f: any) => ({ ...f, film: filmsMap.get(f.film_id) || null }));
     },
     enabled: !!user,
   });
