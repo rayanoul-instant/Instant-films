@@ -187,8 +187,10 @@ export default function MessagesPage() {
   if (selectedUser) {
     return (
       <Layout>
-        <div className="container px-0 max-w-2xl flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
-          {/* Header */}
+        {/* Full-screen fixed on mobile, constrained on desktop */}
+        <div className="fixed inset-0 z-30 bg-background flex flex-col md:static md:inset-auto md:z-auto md:h-[calc(100vh-5rem)]">
+
+          {/* Header — locked to top */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card flex-shrink-0">
             <button onClick={closeConversation} className="text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-5 h-5" />
@@ -205,7 +207,7 @@ export default function MessagesPage() {
             </Link>
           </div>
 
-          {/* Messages */}
+          {/* Messages — scrollable area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((msg) => {
               const filmMatch = msg.content.match(/🎬 \[film:([^:]+):([^:]+):([^\]]*)\]/);
@@ -250,19 +252,24 @@ export default function MessagesPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input */}
-          <div className="p-3 border-t border-border flex gap-2 flex-shrink-0 bg-card">
-            <Input
-              placeholder="Write a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              className="bg-secondary border-border"
-            />
-            <Button onClick={handleSend} size="icon" className="btn-cinema flex-shrink-0">
-              <Send className="w-4 h-4" />
-            </Button>
+          {/* Input — locked above BottomNav on mobile */}
+          <div className="flex-shrink-0 bg-card border-t border-border">
+            <div className="p-3 flex gap-2">
+              <Input
+                placeholder="Write a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                className="bg-secondary border-border"
+              />
+              <Button onClick={handleSend} size="icon" className="btn-cinema flex-shrink-0">
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+            {/* Spacer for BottomNav on mobile */}
+            <div className="h-24 md:hidden" />
           </div>
+
         </div>
       </Layout>
     );
