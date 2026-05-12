@@ -1,11 +1,14 @@
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Clock, Calendar, User, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, User, Tag, Pencil, Check, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VideoPlayer } from '@/components/films/VideoPlayer';
-import { useCourtMetrage } from '@/hooks/useCourtsMetrages';
+import { useCourtMetrage, useUpdateCourtMetrageTitre } from '@/hooks/useCourtsMetrages';
+import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const GENRE_LABELS: Record<string, string> = {
   drama: 'Drama', comedy: 'Comedy', horror: 'Horror', scifi: 'Sci-Fi',
@@ -24,6 +27,30 @@ function parseDureeToMinutes(duree: string): number {
 export default function CourtMetrageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: film, isLoading } = useCourtMetrage(id!);
+  const { profile } = useAuth();
+  const isAdmin = profile?.is_admin === true;
+  const updateTitre = useUpdateCourtMetrageTitre();
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editingTitle) inputRef.current?.focus();
+  }, [editingTitle]);
+
+  const startEdit = () => {
+    setTitleValue(film?.titre || '');
+    setEditingTitle(true);
+  };
+
+  const saveTitle = async () => {
+    if (!film || !titleValue.trim()) return;
+    await updateTitre.mutateAsync({ id: film.id, titre: titleValue.trim() });
+    setEditingTitle(false);
+    toast.success('Title updated');
+  };
+
+  const cancelEdit = () => setEditingTitle(false);
 
   if (isLoading) {
     return (
@@ -82,7 +109,37 @@ export default function CourtMetrageDetailPage() {
         </div>
 
         <div className="mb-6">
-          <h1 className="font-display text-2xl md:text-3xl font-bold mb-3">{film.titre}</h1>
+          <div className="flex items-center gap-2 mb-3 group/title">
+            {editingTitle ? (
+              <>
+                <input
+                  ref={inputRef}
+                  value={titleValue}
+                  onChange={e => setTitleValue(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') cancelEdit(); }}
+                  className="font-display text-2xl md:text-3xl font-bold bg-transparent border-b-2 border-primary outline-none flex-1"
+                />
+                <button onClick={saveTitle} className="p-1 rounded text-primary hover:text-primary/80 transition-colors flex-shrink-0">
+                  <Check className="w-5 h-5" />
+                </button>
+                <button onClick={cancelEdit} className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+                  <X className="w-5 h-5" />
+                </button>
+              </>
+            ) : (
+              <>
+                <h1 className="font-display text-2xl md:text-3xl font-bold">{film.titre}</h1>
+                {isAdmin && (
+                  <button
+                    onClick={startEdit}
+                    className="p-1 rounded text-muted-foreground/40 hover:text-primary opacity-0 group-hover/title:opacity-100 transition-all flex-shrink-0"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
             {film.auteur && (

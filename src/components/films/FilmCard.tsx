@@ -234,8 +234,14 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-white">
-              Genres <span className="text-white/40">({currentGenres.length}/3)</span>
+            <span className="text-[11px] font-semibold text-white flex items-center gap-1">
+              Genres
+              <span className={currentGenres.length === 0 ? 'text-orange-400' : 'text-white/40'}>
+                ({currentGenres.length}/3)
+              </span>
+              {currentGenres.length === 0 && (
+                <span className="text-orange-400 text-[9px]">visible dans All uniquement</span>
+              )}
             </span>
             <button
               onClick={() => setShowGenrePicker(false)}

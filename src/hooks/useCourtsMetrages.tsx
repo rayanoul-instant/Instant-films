@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CourtMetrage {
@@ -28,6 +28,29 @@ export function useCourtMetrage(id: string) {
       return data as CourtMetrage;
     },
     enabled: !!id,
+  });
+}
+
+export function useUpdateCourtMetrageTitre() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, titre }: { id: string; titre: string }) => {
+      const { error } = await supabase
+        .from('courts_metrages' as any)
+        .update({ titre })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, { id, titre }) => {
+      queryClient.setQueryData(['court_metrage', id], (old: CourtMetrage | undefined) =>
+        old ? { ...old, titre } : old
+      );
+      queryClient.setQueriesData(
+        { queryKey: ['courts_metrages'] },
+        (old: CourtMetrage[] | undefined) =>
+          old?.map(f => f.id === id ? { ...f, titre } : f)
+      );
+    },
   });
 }
 

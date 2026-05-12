@@ -62,20 +62,20 @@ export default function AuthPage() {
             <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
               <Mail className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="font-display text-2xl font-bold">Vérifiez votre email</h1>
+            <h1 className="font-display text-2xl font-bold">Check your email</h1>
             <p className="text-muted-foreground text-sm">
-              Un lien de confirmation a été envoyé à <span className="text-foreground font-medium">{emailSentTo}</span>.
-              Cliquez sur ce lien pour activer votre compte.
+              A confirmation link has been sent to <span className="text-foreground font-medium">{emailSentTo}</span>.
+              Click the link to activate your account.
             </p>
             <p className="text-muted-foreground text-xs">
-              Une fois confirmé, revenez ici et connectez-vous.
+              Once confirmed, come back here and log in.
             </p>
             <Button
               variant="outline"
               className="w-full border-border"
               onClick={() => setEmailSentTo(null)}
             >
-              Retour à la connexion
+              Back to login
             </Button>
           </div>
         </motion.div>

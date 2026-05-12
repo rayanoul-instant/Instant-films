@@ -19,6 +19,9 @@ import MessagesPage from "./pages/MessagesPage";
 import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
 import CourtMetrageDetailPage from "./pages/CourtMetrageDetailPage";
+import MentionsLegalesPage from "./pages/MentionsLegalesPage";
+import CGUPage from "./pages/CGUPage";
+import PolitiqueConfidentialitePage from "./pages/PolitiqueConfidentialitePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,6 +67,9 @@ function AnimatedRoutes() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
+          <Route path="/legal" element={<MentionsLegalesPage />} />
+          <Route path="/terms" element={<CGUPage />} />
+          <Route path="/privacy" element={<PolitiqueConfidentialitePage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </motion.div>
@@ -93,7 +99,7 @@ const App = () => {
               <ScrollManager />
               <DesktopDock />
               <BottomNav />
-              <AnimatedRoutes />
+<AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
