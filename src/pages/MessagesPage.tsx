@@ -186,9 +186,10 @@ export default function MessagesPage() {
   // ── Conversation view ──────────────────────────────────────────────────────
   if (selectedUser) {
     return (
-      <Layout>
+      <Layout hideFooter>
         {/* Full-screen fixed on mobile, constrained on desktop */}
         <div className="fixed inset-0 z-30 bg-background flex flex-col md:static md:inset-auto md:z-auto md:h-[calc(100vh-5rem)]">
+
 
           {/* Header — locked to top */}
           <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card flex-shrink-0">

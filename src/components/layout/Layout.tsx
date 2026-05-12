@@ -6,16 +6,15 @@ interface LayoutProps {
   children: ReactNode;
   hideNav?: boolean;
   showNavLogo?: boolean;
+  hideFooter?: boolean;
 }
 
-const HIDE_FOOTER_PATHS = ['/courts-metrages/'];
-
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, hideFooter: hideFooterProp }: LayoutProps) {
   const location = useLocation();
 
   const hideFooter =
-    HIDE_FOOTER_PATHS.some(p => location.pathname.startsWith(p)) ||
-    location.pathname === '/messages';
+    hideFooterProp ||
+    location.pathname.startsWith('/courts-metrages/');
 
   return (
     <div className="min-h-screen flex flex-col">
