@@ -95,14 +95,14 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
             </div>
           </div>
 
-          {/* Save / Bookmark Button */}
-          {user && !isTop3 && !isAdmin && (
+          {/* Save / Bookmark Button — visible for all logged-in users */}
+          {user && !isTop3 && (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleFavorite}
               className={cn(
-                "absolute top-2 right-2 z-10 transition-opacity duration-200",
+                "absolute top-2 right-2 z-20 transition-opacity duration-200",
                 isFavorited ? "opacity-100 text-accent" : "opacity-0 group-hover:opacity-60 text-foreground/80 hover:!opacity-100 hover:text-accent"
               )}
             >
@@ -126,58 +126,56 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
             {film.duration_minutes} min
           </Badge>
 
-          {/* Admin buttons */}
+          {/* Admin: subtle dark hover overlay (visual only) */}
           {isAdmin && (
-            <div
-              className={cn(
-                "absolute inset-0 z-20 transition-opacity flex flex-col justify-between p-2 bg-black/40",
-                showGenrePicker ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-              )}
-              onClick={(e) => e.preventDefault()}
-            >
-              <div className="flex justify-end">
-                <button
-                  onClick={(e) => handleAdminAction(e, () => setShowGenrePicker(v => !v))}
-                  className={cn(
-                    'p-1.5 rounded-lg border transition-colors',
-                    showGenrePicker || currentGenres.length > 0
-                      ? 'bg-primary/30 border-primary text-primary'
-                      : 'bg-black/50 border-white/30 text-white/70 hover:border-primary hover:text-primary'
-                  )}
-                  title="Modifier les genres"
-                >
-                  <Tag className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            <div className="absolute inset-0 z-10 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          )}
 
-              <div className="flex justify-end">
-                {!confirmDelete ? (
+          {/* Admin: Genre button — top left */}
+          {isAdmin && !isTop3 && (
+            <button
+              onClick={(e) => handleAdminAction(e, () => setShowGenrePicker(v => !v))}
+              className={cn(
+                "absolute top-2 left-2 z-20 p-1.5 rounded-lg border transition-all",
+                showGenrePicker || currentGenres.length > 0
+                  ? 'opacity-100 bg-primary/30 border-primary text-primary'
+                  : 'opacity-0 group-hover:opacity-100 bg-black/50 border-white/30 text-white/70 hover:border-primary hover:text-primary'
+              )}
+              title="Modifier les genres"
+            >
+              <Tag className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Admin: Delete button — bottom left */}
+          {isAdmin && !isTop3 && (
+            <div className={cn("absolute bottom-2 left-2 z-20 transition-opacity", confirmDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
+              {!confirmDelete ? (
+                <button
+                  onClick={(e) => handleAdminAction(e, () => setConfirmDelete(true))}
+                  className="p-1.5 rounded-lg bg-black/50 text-white/70 hover:text-red-400 hover:bg-black/70 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <div className="flex gap-1 items-center">
                   <button
-                    onClick={(e) => handleAdminAction(e, () => setConfirmDelete(true))}
-                    className="p-1.5 rounded-lg bg-black/50 text-white/70 hover:text-red-400 hover:bg-black/70 transition-colors"
+                    onClick={(e) => handleAdminAction(e, async () => {
+                      await deleteFilm.mutateAsync(film.id);
+                      setConfirmDelete(false);
+                    })}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    Confirmer
                   </button>
-                ) : (
-                  <div className="flex gap-1 items-center">
-                    <button
-                      onClick={(e) => handleAdminAction(e, async () => {
-                        await deleteFilm.mutateAsync(film.id);
-                        setConfirmDelete(false);
-                      })}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-                    >
-                      Confirmer
-                    </button>
-                    <button
-                      onClick={(e) => handleAdminAction(e, () => setConfirmDelete(false))}
-                      className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/50 text-white/80 hover:bg-black/70 transition-colors"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <button
+                    onClick={(e) => handleAdminAction(e, () => setConfirmDelete(false))}
+                    className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/50 text-white/80 hover:bg-black/70 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
