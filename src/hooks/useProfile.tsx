@@ -19,7 +19,7 @@ export function useUserProfile(userId: string) {
           .eq('user_id', userId),
         supabase
           .from('favorites')
-          .select('*, film:films(*)')
+          .select('id, user_id, film_id, created_at')
           .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(20),
@@ -27,11 +27,21 @@ export function useUserProfile(userId: string) {
 
       if (profileRes.error) throw profileRes.error;
 
+      // Fetch film details separately to avoid FK join issue
+      const favs = favRes.data || [];
+      let favorites: any[] = [];
+      if (favs.length > 0) {
+        const filmIds = favs.map((f: any) => f.film_id);
+        const { data: films } = await supabase.from('films').select('*').in('id', filmIds);
+        const filmsMap = new Map((films || []).map((f: any) => [f.id, f]));
+        favorites = favs.map((f: any) => ({ ...f, film: filmsMap.get(f.film_id) || null }));
+      }
+
       return {
         profile: profileRes.data,
         ratings: ratingsRes.data || [],
         watchCount: watchRes.count || 0,
-        favorites: favRes.data || [],
+        favorites,
       };
     },
     enabled: !!userId,
