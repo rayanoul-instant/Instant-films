@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
 
   const hideFooter =
     HIDE_FOOTER_PATHS.some(p => location.pathname.startsWith(p)) ||
-    (location.pathname === '/messages' && location.search.includes('with='));
+    location.pathname === '/messages';
 
   return (
     <div className="min-h-screen flex flex-col">
