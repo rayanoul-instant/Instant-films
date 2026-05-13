@@ -188,7 +188,7 @@ export default function MessagesPage() {
     return (
       <Layout hideFooter>
         {/* Full-screen fixed on mobile, constrained on desktop */}
-        <div className="fixed inset-0 z-30 bg-background flex flex-col md:static md:inset-auto md:z-auto md:h-[calc(100vh-5rem)]">
+        <div className="fixed inset-0 z-30 bg-background flex flex-col md:static md:inset-auto md:z-auto md:h-[calc(100vh-5rem)]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
 
 
           {/* Header — locked to top */}
