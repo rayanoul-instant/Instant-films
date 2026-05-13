@@ -78,6 +78,7 @@
 
   html {
     scroll-behavior: smooth;
+    background-color: hsl(275 45% 22%);
   }
 
   body {
