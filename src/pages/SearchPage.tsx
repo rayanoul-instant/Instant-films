@@ -12,12 +12,14 @@ import { FilmGenre, GENRE_LABELS } from '@/types/database';
 import { supabase } from '@/integrations/supabase/client';
 import { useFollowingList } from '@/hooks/useFollowers';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const GENRES: FilmGenre[] = [
   'drama', 'comedy', 'animation', 'horror', 'romance', 'scifi', 'experimental', 'kid', 'mainstream'
 ];
 
 export default function SearchPage() {
+  usePageMeta('Search - Instant Films', 'Search for short films on Instant Films.');
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 

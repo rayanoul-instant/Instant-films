@@ -9,6 +9,7 @@ import { useCourtMetrage, useUpdateCourtMetrageTitre } from '@/hooks/useCourtsMe
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const GENRE_LABELS: Record<string, string> = {
   drama: 'Drama', comedy: 'Comedy', horror: 'Horror', scifi: 'Sci-Fi',
@@ -28,6 +29,10 @@ export default function CourtMetrageDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: film, isLoading } = useCourtMetrage(id!);
   const { profile } = useAuth();
+  usePageMeta(
+    film ? `${film.titre || film.title || 'Court métrage'} - Instant Films` : 'Instant Films',
+    film?.synopsis || 'Watch this short film on Instant Films.'
+  );
   const isAdmin = profile?.is_admin === true;
   const updateTitre = useUpdateCourtMetrageTitre();
   const [editingTitle, setEditingTitle] = useState(false);

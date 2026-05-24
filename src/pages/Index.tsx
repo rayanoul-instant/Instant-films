@@ -9,9 +9,14 @@ import { AvatarDisplay } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { useFeaturedFilms, useFilms, useTopReviews, useRecommendations } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import logoInstant from '@/assets/logo-instant.png';
 
 const Index = () => {
+  usePageMeta(
+    'Instant Films - La plateforme de streaming dédiée aux courts métrages',
+    'Découvrez, visionnez et partagez les meilleurs courts métrages libres de droits sur Instant Films.'
+  );
   const { user } = useAuth();
   const { data: popularFilms, isLoading: loadingPopular } = useFilms({ sortBy: 'popular' });
   const { data: featuredFilms } = useFeaturedFilms();

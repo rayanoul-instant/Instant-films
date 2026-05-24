@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 export default function MentionsLegalesPage() {
+  usePageMeta('Legal Notices - Instant Films');
   return (
     <Layout>
       <div className="container max-w-2xl px-4 py-10">

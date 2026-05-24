@@ -16,6 +16,7 @@ import { useFollowingList } from '@/hooks/useFollowers';
 import { GENRE_LABELS, getFilmTitle } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -41,6 +42,10 @@ export default function FilmDetailPage() {
   const deleteRating = useDeleteRating();
   const queryClient = useQueryClient();
   const isAdmin = profile?.is_admin === true;
+  usePageMeta(
+    film ? `${getFilmTitle(film)} - Instant Films` : 'Instant Films',
+    film?.synopsis || 'Regardez ce court métrage sur Instant Films.'
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const [userRating, setUserRating] = useState(0);
