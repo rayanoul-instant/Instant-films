@@ -33,7 +33,7 @@ export function useDiscussions(filmId?: string) {
           if (discussion.film_id) {
             const { data: filmData } = await supabase
               .from('films')
-              .select('id, title')
+              .select('id, slug, title')
               .eq('id', discussion.film_id)
               .single();
             film = filmData;

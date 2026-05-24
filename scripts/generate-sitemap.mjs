@@ -38,7 +38,7 @@ function urlEntry(loc, lastmod, changefreq, priority) {
 
 async function generate() {
   const [{ data: films, error: e1 }, { data: courts, error: e2 }] = await Promise.all([
-    supabase.from('films').select('id, updated_at'),
+    supabase.from('films').select('slug, updated_at'),
     supabase.from('courts_metrages').select('id, created_at'),
   ]);
 
@@ -48,7 +48,7 @@ async function generate() {
   const entries = [
     ...STATIC_PAGES.map(p => urlEntry(`${SITE_URL}${p.url}`, null, p.changefreq, p.priority)),
     ...(films || []).map(f =>
-      urlEntry(`${SITE_URL}/films/${f.id}`, f.updated_at?.split('T')[0], 'weekly', '0.7')
+      urlEntry(`${SITE_URL}/films/${f.slug}`, f.updated_at?.split('T')[0], 'weekly', '0.7')
     ),
     ...(courts || []).map(c =>
       urlEntry(`${SITE_URL}/courts-metrages/${c.id}`, c.created_at?.split('T')[0], 'monthly', '0.6')

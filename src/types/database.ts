@@ -9,6 +9,7 @@ export interface AvatarAccessories {
 
 export interface Film {
   id: string;
+  slug: string;
   title: string;
   display_title: string | null;
   synopsis: string | null;
@@ -77,7 +78,7 @@ export interface Discussion {
   created_at: string;
   updated_at: string;
   profile?: Pick<Profile, 'id' | 'username' | 'avatar_accessories'>;
-  film?: Pick<Film, 'id' | 'title' | 'thumbnail_url'>;
+  film?: Pick<Film, 'id' | 'slug' | 'title' | 'thumbnail_url'>;
 }
 
 export interface Comment {

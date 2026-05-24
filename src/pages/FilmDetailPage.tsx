@@ -22,11 +22,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function FilmDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, profile } = useAuth();
-  
-  const { data: film, isLoading } = useFilm(id!);
+
+  const { data: film, isLoading } = useFilm(slug!);
   const { data: ratings } = useFilmRatings(id!);
   const { data: favorites } = useFavorites();
   const { data: reviewLikes } = useReviewLikes(id!);

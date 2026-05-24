@@ -60,7 +60,7 @@ function AnimatedRoutes() {
           <Route path="/" element={<Index />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/user/:id" element={<UserProfilePage />} />
-          <Route path="/films/:id" element={<FilmDetailPage />} />
+          <Route path="/films/:slug" element={<FilmDetailPage />} />
           <Route path="/discussions" element={<DiscussionsPage />} />
           <Route path="/discussions/:id" element={<DiscussionDetailPage />} />
           <Route path="/messages" element={<MessagesPage />} />

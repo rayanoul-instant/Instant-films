@@ -218,7 +218,7 @@ export default function DiscussionDetailPage() {
                   {formatDistanceToNow(new Date(discussion.created_at), { addSuffix: true })}
                 </span>
                 {discussion.film && (
-                  <Link to={`/films/${discussion.film.id}`}>
+                  <Link to={`/films/${discussion.film.slug}`}>
                     <Badge variant="outline" className="border-border hover:border-primary">
                       <Film className="w-3 h-3 mr-1" />
                       {discussion.film.title}

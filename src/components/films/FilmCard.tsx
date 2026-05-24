@@ -62,7 +62,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
       )}
     >
       <Link
-        to={`/films/${film.id}`}
+        to={`/films/${film.slug}`}
         className="block"
         onClick={() => sessionStorage.setItem('lastClickedFilm', film.id)}
       >
