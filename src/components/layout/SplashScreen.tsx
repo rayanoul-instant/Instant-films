@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import splashVideo from '@/assets/splash-video.mp4';
+import logoInstant from '@/assets/logo-instant.png';
 
 interface SplashScreenProps {
   show: boolean;
@@ -8,29 +8,9 @@ interface SplashScreenProps {
 }
 
 export function SplashScreen({ show, onDone }: SplashScreenProps) {
-  const mainRef = useRef<HTMLVideoElement>(null);
-  const bgRef = useRef<HTMLVideoElement>(null);
-
   useEffect(() => {
     if (!show) return;
-
-    // Safety net: skip after 3s max if video stalls or never loads
-    const timeout = setTimeout(() => onDone?.(), 3000);
-
-    const tryPlay = async (video: HTMLVideoElement | null, isMain: boolean) => {
-      if (!video) return;
-      try {
-        video.currentTime = 0;
-        await video.play();
-      } catch {
-        // Autoplay blocked — skip splash immediately on main video
-        if (isMain) onDone?.();
-      }
-    };
-
-    tryPlay(mainRef.current, true);
-    tryPlay(bgRef.current, false);
-
+    const timeout = setTimeout(() => onDone?.(), 1800);
     return () => clearTimeout(timeout);
   }, [show, onDone]);
 
@@ -38,29 +18,18 @@ export function SplashScreen({ show, onDone }: SplashScreenProps) {
     <AnimatePresence>
       {show && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black"
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{ background: 'linear-gradient(180deg, hsl(275 45% 22%) 0%, hsl(265 30% 9%) 100%)' }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          transition={{ duration: 0.6, ease: 'easeInOut' }}
         >
-          {/* Fond flouté */}
-          <video
-            ref={bgRef}
-            src={splashVideo}
-            muted
-            playsInline
-            loop
-            className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
-            aria-hidden
-          />
-          {/* Vidéo principale */}
-          <video
-            ref={mainRef}
-            src={splashVideo}
-            muted
-            playsInline
-            onEnded={onDone}
-            onError={onDone}
-            className="relative w-full h-full object-contain"
+          <motion.img
+            src={logoInstant}
+            alt="Instant Films"
+            className="w-48 md:w-64"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </motion.div>
       )}
