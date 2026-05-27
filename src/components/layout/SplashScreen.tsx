@@ -14,21 +14,22 @@ export function SplashScreen({ show, onDone }: SplashScreenProps) {
   useEffect(() => {
     if (!show) return;
 
-    // Safety net: skip after 8s max if video stalls or never loads
-    const timeout = setTimeout(() => onDone?.(), 8000);
+    // Safety net: skip after 3s max if video stalls or never loads
+    const timeout = setTimeout(() => onDone?.(), 3000);
 
-    const tryPlay = async (video: HTMLVideoElement | null) => {
+    const tryPlay = async (video: HTMLVideoElement | null, isMain: boolean) => {
       if (!video) return;
       try {
         video.currentTime = 0;
         await video.play();
       } catch {
-        // Autoplay blocked — onDone will fire via timeout
+        // Autoplay blocked — skip splash immediately on main video
+        if (isMain) onDone?.();
       }
     };
 
-    tryPlay(mainRef.current);
-    tryPlay(bgRef.current);
+    tryPlay(mainRef.current, true);
+    tryPlay(bgRef.current, false);
 
     return () => clearTimeout(timeout);
   }, [show, onDone]);

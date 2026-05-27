@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,20 +9,21 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopDock } from "@/components/layout/DesktopDock";
-import Index from "./pages/Index";
-import SearchPage from "./pages/SearchPage";
-import UserProfilePage from "./pages/UserProfilePage";
-import FilmDetailPage from "./pages/FilmDetailPage";
-import DiscussionsPage from "./pages/DiscussionsPage";
-import DiscussionDetailPage from "./pages/DiscussionDetailPage";
-import MessagesPage from "./pages/MessagesPage";
-import AuthPage from "./pages/AuthPage";
-import AccountPage from "./pages/AccountPage";
-import CourtMetrageDetailPage from "./pages/CourtMetrageDetailPage";
-import MentionsLegalesPage from "./pages/MentionsLegalesPage";
-import CGUPage from "./pages/CGUPage";
-import PolitiqueConfidentialitePage from "./pages/PolitiqueConfidentialitePage";
-import NotFound from "./pages/NotFound";
+
+const Index = lazy(() => import("./pages/Index"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
+const FilmDetailPage = lazy(() => import("./pages/FilmDetailPage"));
+const DiscussionsPage = lazy(() => import("./pages/DiscussionsPage"));
+const DiscussionDetailPage = lazy(() => import("./pages/DiscussionDetailPage"));
+const MessagesPage = lazy(() => import("./pages/MessagesPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const CourtMetrageDetailPage = lazy(() => import("./pages/CourtMetrageDetailPage"));
+const MentionsLegalesPage = lazy(() => import("./pages/MentionsLegalesPage"));
+const CGUPage = lazy(() => import("./pages/CGUPage"));
+const PolitiqueConfidentialitePage = lazy(() => import("./pages/PolitiqueConfidentialitePage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
@@ -56,22 +57,24 @@ function AnimatedRoutes() {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.25, ease: "easeInOut" }}
       >
-        <Routes location={location}>
-          <Route path="/" element={<Index />} />
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/user/:id" element={<UserProfilePage />} />
-          <Route path="/films/:slug" element={<FilmDetailPage />} />
-          <Route path="/discussions" element={<DiscussionsPage />} />
-          <Route path="/discussions/:id" element={<DiscussionDetailPage />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
-          <Route path="/legal" element={<MentionsLegalesPage />} />
-          <Route path="/terms" element={<CGUPage />} />
-          <Route path="/privacy" element={<PolitiqueConfidentialitePage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+          <Routes location={location}>
+            <Route path="/" element={<Index />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/user/:id" element={<UserProfilePage />} />
+            <Route path="/films/:slug" element={<FilmDetailPage />} />
+            <Route path="/discussions" element={<DiscussionsPage />} />
+            <Route path="/discussions/:id" element={<DiscussionDetailPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
+            <Route path="/legal" element={<MentionsLegalesPage />} />
+            <Route path="/terms" element={<CGUPage />} />
+            <Route path="/privacy" element={<PolitiqueConfidentialitePage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );
