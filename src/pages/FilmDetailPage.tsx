@@ -27,9 +27,10 @@ export default function FilmDetailPage() {
   const { user, profile } = useAuth();
 
   const { data: film, isLoading } = useFilm(slug!);
-  const { data: ratings } = useFilmRatings(id!);
+  const filmId = film?.id || '';
+  const { data: ratings } = useFilmRatings(filmId);
   const { data: favorites } = useFavorites();
-  const { data: reviewLikes } = useReviewLikes(id!);
+  const { data: reviewLikes } = useReviewLikes(filmId);
   const { data: followingList } = useFollowingList();
   const rateFilm = useRateFilm();
   const toggleFavorite = useToggleFavorite();
@@ -57,14 +58,14 @@ export default function FilmDetailPage() {
   const rateRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const isFavorited = favorites?.some((f) => f.film_id === id);
+  const isFavorited = favorites?.some((f) => f.film_id === filmId);
 
   const handleRate = async () => {
     if (!user) { toast.error('Sign in to rate this film'); return; }
     if (userRating === 0) { toast.error('Please select a rating'); return; }
     try {
       // Store rating on /10 scale internally, convert from /5
-      await rateFilm.mutateAsync({ filmId: id!, rating: userRating * 2, review: review || undefined });
+      await rateFilm.mutateAsync({ filmId: filmId, rating: userRating * 2, review: review || undefined });
       toast.success('Your rating has been saved');
       setShowReviewForm(false);
       setReview('');
@@ -75,7 +76,7 @@ export default function FilmDetailPage() {
 
   const handleFavorite = () => {
     if (!user) { toast.error('Sign in to add to favorites'); return; }
-    toggleFavorite.mutate(id!);
+    toggleFavorite.mutate(filmId);
   };
 
   const handleShareLink = () => {
@@ -96,18 +97,18 @@ export default function FilmDetailPage() {
     setSentTo(prev => new Set(prev).add(receiverId));
   };
 
-  const handlePlay = () => { if (user) addToHistory.mutate(id!); };
+  const handlePlay = () => { if (user) addToHistory.mutate(filmId); };
 
-  const isInTop3 = top3?.some(f => f.film_id === id) || false;
+  const isInTop3 = top3?.some(f => f.film_id === filmId) || false;
 
   const handleTop3 = () => {
     if (!user) { toast.error('Sign in to manage your Top 3'); return; }
     if (isInTop3) {
-      toggleTop3.mutate(id!);
+      toggleTop3.mutate(filmId);
       return;
     }
     if ((top3?.length || 0) < 3) {
-      toggleTop3.mutate(id!);
+      toggleTop3.mutate(filmId);
       toast.success('Added to your Top 3!');
       return;
     }
@@ -116,7 +117,7 @@ export default function FilmDetailPage() {
 
   const handleReplaceTop3 = async (replaceFilmId: string) => {
     await toggleTop3.mutateAsync(replaceFilmId);
-    await toggleTop3.mutateAsync(id!);
+    await toggleTop3.mutateAsync(filmId);
     toast.success('Top 3 updated!');
     setShowTop3Popup(false);
   };
@@ -486,7 +487,7 @@ export default function FilmDetailPage() {
                         <button
                           onClick={() => {
                             if (confirm('Delete your review?')) {
-                              deleteRating.mutate({ ratingId: rating.id, filmId: id! });
+                              deleteRating.mutate({ ratingId: rating.id, filmId: filmId });
                             }
                           }}
                           className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -497,7 +498,7 @@ export default function FilmDetailPage() {
                         <button
                           onClick={() => {
                             if (!user) { toast.error('Sign in to like reviews'); return; }
-                            toggleReviewLike.mutate({ ratingId: rating.id, filmId: id! });
+                            toggleReviewLike.mutate({ ratingId: rating.id, filmId: filmId });
                           }}
                           className={cn(
                             "flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-colors",
