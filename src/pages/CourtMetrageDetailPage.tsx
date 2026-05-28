@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { VideoPlayer } from '@/components/films/VideoPlayer';
 import { useCourtMetrage, useUpdateCourtMetrageTitre } from '@/hooks/useCourtsMetrages';
 import { useAuth } from '@/hooks/useAuth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { usePageMeta } from '@/hooks/usePageMeta';
 
