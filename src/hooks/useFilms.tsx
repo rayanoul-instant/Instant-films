@@ -77,25 +77,28 @@ export function useFeaturedFilms() {
   });
 }
 
-export function useFilm(slug: string) {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function useFilm(slugOrId: string) {
   return useQuery({
-    queryKey: ['film', slug],
+    queryKey: ['film', slugOrId],
     queryFn: async () => {
+      const isUuid = UUID_REGEX.test(slugOrId);
       const { data: film, error } = await supabase
         .from('films')
         .select('*')
-        .eq('slug', slug)
+        .eq(isUuid ? 'id' : 'slug', slugOrId)
         .single();
 
       if (error) throw error;
 
-      // Get average rating
       const { data: avgData } = await supabase
         .rpc('get_film_average_rating', { film_uuid: film.id });
 
       return { ...film, average_rating: avgData || 0 } as Film;
     },
-    enabled: !!slug,
+    enabled: !!slugOrId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
