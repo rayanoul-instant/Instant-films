@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -50,13 +50,7 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence>
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: "easeInOut" }}
-      >
+      <div key={location.pathname}>
         <Suspense fallback={<div className="min-h-screen bg-background" />}>
           <Routes location={location}>
             <Route path="/" element={<Index />} />
@@ -75,7 +69,7 @@ function AnimatedRoutes() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
-      </motion.div>
+      </div>
     </AnimatePresence>
   );
 }
