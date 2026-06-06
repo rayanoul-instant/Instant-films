@@ -195,11 +195,15 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
 
           {/* Rating & Genres */}
           <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center gap-1 text-primary">
-              <Star className="w-4 h-4 fill-primary" />
-              <span className="text-sm font-medium">
-                {film.average_rating ? film.average_rating.toFixed(1) : 'N/A'}
-              </span>
+            <div className="flex items-center gap-1">
+              {film.average_rating ? (
+                <>
+                  <Star className="w-4 h-4 fill-primary text-primary" />
+                  <span className="text-sm font-medium text-primary">{film.average_rating.toFixed(1)}</span>
+                </>
+              ) : (
+                <Star className="w-4 h-4 text-muted-foreground/40" />
+              )}
             </div>
 
             <div className="flex gap-1">
