@@ -183,8 +183,8 @@ export default function FilmDetailPage() {
 
         {/* Title + meta */}
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
-            <div>
+          <div className="flex flex-row items-start justify-between gap-3 mb-4">
+            <div className="flex-1 min-w-0">
               <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{getFilmTitle(film)}</h1>
               {film.director && (
                 <p className="text-lg text-muted-foreground flex items-center gap-2">
@@ -196,7 +196,7 @@ export default function FilmDetailPage() {
               variant="outline"
               size="icon"
               onClick={handleFavorite}
-              className={cn("border-border flex-shrink-0", isFavorited && "bg-accent/20 text-accent border-accent")}
+              className={cn("border-border flex-shrink-0 mt-1", isFavorited && "bg-accent/20 text-accent border-accent")}
             >
               <Bookmark className={cn("w-5 h-5", isFavorited && "fill-accent")} />
             </Button>
