@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopDock } from "@/components/layout/DesktopDock";
@@ -13,13 +14,13 @@ import { DesktopDock } from "@/components/layout/DesktopDock";
 const Index = lazy(() => import("./pages/Index"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
-const FilmDetailPage = lazy(() => import("./pages/FilmDetailPage"));
+import FilmDetailPage from "./pages/FilmDetailPage";
 const DiscussionsPage = lazy(() => import("./pages/DiscussionsPage"));
 const DiscussionDetailPage = lazy(() => import("./pages/DiscussionDetailPage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const AccountPage = lazy(() => import("./pages/AccountPage"));
-const CourtMetrageDetailPage = lazy(() => import("./pages/CourtMetrageDetailPage"));
+import CourtMetrageDetailPage from "./pages/CourtMetrageDetailPage";
 const MentionsLegalesPage = lazy(() => import("./pages/MentionsLegalesPage"));
 const CGUPage = lazy(() => import("./pages/CGUPage"));
 const PolitiqueConfidentialitePage = lazy(() => import("./pages/PolitiqueConfidentialitePage"));
@@ -85,7 +86,7 @@ const App = () => {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <SplashScreen show={showSplash} onDone={handleSplashDone} />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
@@ -101,7 +102,7 @@ const App = () => {
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
-    </>
+    </ErrorBoundary>
   );
 };
 

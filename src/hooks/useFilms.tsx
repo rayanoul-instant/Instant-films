@@ -144,6 +144,9 @@ export function useRateFilm() {
       queryClient.invalidateQueries({ queryKey: ['film-ratings', filmId] });
       queryClient.invalidateQueries({ queryKey: ['film', filmId] });
     },
+    onError: (error: any) => {
+      toast.error('Failed to submit rating — ' + (error?.message || 'unknown error'));
+    },
   });
 }
 
@@ -264,6 +267,9 @@ export function useToggleTop3() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['top3'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update Top 3 — ' + (error?.message || 'unknown error'));
     },
   });
 }
@@ -436,6 +442,9 @@ export function useDeleteRating() {
       queryClient.invalidateQueries({ queryKey: ['film-ratings', filmId] });
       queryClient.invalidateQueries({ queryKey: ['film', filmId] });
     },
+    onError: (error: any) => {
+      toast.error('Failed to delete rating — ' + (error?.message || 'unknown error'));
+    },
   });
 }
 
@@ -462,6 +471,9 @@ export function useToggleReviewLike() {
     },
     onSuccess: (filmId) => {
       queryClient.invalidateQueries({ queryKey: ['review-likes', filmId] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to like review — ' + (error?.message || 'unknown error'));
     },
   });
 }
@@ -490,6 +502,9 @@ export function useDeleteFilm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['films'] });
     },
+    onError: (error: any) => {
+      toast.error('Failed to delete film — ' + (error?.message || 'unknown error'));
+    },
   });
 }
 
@@ -506,6 +521,9 @@ export function useToggleMainstream() {
     onSuccess: (_, { filmId }) => {
       queryClient.invalidateQueries({ queryKey: ['film', filmId] });
       queryClient.invalidateQueries({ queryKey: ['films'] });
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update tag — ' + (error?.message || 'unknown error'));
     },
   });
 }
@@ -528,6 +546,9 @@ export function useSetGenres() {
         ['film', filmId],
         (old: Film | undefined) => old ? { ...old, genres } : old
       );
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update genres — ' + (error?.message || 'unknown error'));
     },
   });
 }

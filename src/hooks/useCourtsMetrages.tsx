@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface CourtMetrage {
   id: string;
@@ -28,6 +29,7 @@ export function useCourtMetrage(id: string) {
       return data as CourtMetrage;
     },
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -50,6 +52,9 @@ export function useUpdateCourtMetrageTitre() {
         (old: CourtMetrage[] | undefined) =>
           old?.map(f => f.id === id ? { ...f, titre } : f)
       );
+    },
+    onError: (error: any) => {
+      toast.error('Failed to update title — ' + (error?.message || 'unknown error'));
     },
   });
 }
