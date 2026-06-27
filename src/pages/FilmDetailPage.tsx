@@ -213,7 +213,7 @@ export default function FilmDetailPage() {
             )}
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 text-primary fill-primary" />
-              <span className="font-medium">{displayAvgRating > 0 ? displayAvgRating.toFixed(1) : 'N/A'}/5</span>
+              <span className="font-medium">{displayAvgRating > 0 ? (displayAvgRating % 1 === 0 ? String(displayAvgRating) : displayAvgRating.toFixed(1)) : 'N/A'}/5</span>
               <span className="text-muted-foreground">({ratings?.length || 0} reviews)</span>
             </div>
           </div>
@@ -282,12 +282,14 @@ export default function FilmDetailPage() {
           )}
         </div>
 
+        {/* SYNOPSIS DÉSACTIVÉ — décommenter pour réactiver
         {film.synopsis && (
           <div className="mb-8">
             <h2 className="font-display text-xl font-semibold mb-3">Synopsis</h2>
             <p className="text-muted-foreground leading-relaxed">{film.synopsis}</p>
           </div>
         )}
+        */}
 
         {/* ===== ACTION BUTTONS: RATE & REVIEW / SHARE / TOP 3 ===== */}
         <div ref={rateRef} className="flex gap-3 mb-8">
@@ -471,11 +473,8 @@ export default function FilmDetailPage() {
                         <Link to={`/user/${rating.user_id}`} className="font-semibold text-sm hover:text-primary transition-colors">
                           {rating.profile?.username || 'User'}
                         </Link>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {[1,2,3,4,5].map(s => (
-                            <Star key={s} className={cn("w-3 h-3", s <= Math.round(rating.rating / 2) ? "text-primary fill-primary" : "text-muted-foreground/30")} />
-                          ))}
-                          <span className="text-xs text-muted-foreground ml-1">{(rating.rating / 2).toFixed(1)}/5</span>
+                        <div className="mt-0.5">
+                          <StarRating rating={rating.rating / 2} size="sm" />
                         </div>
                       </div>
                     </div>

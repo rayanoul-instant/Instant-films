@@ -94,7 +94,7 @@ export function StarRating({
         size === 'md' && 'text-sm',
         size === 'lg' && 'text-lg'
       )}>
-        {displayRating > 0 ? displayRating.toFixed(1) : 'N/A'}
+        {displayRating > 0 ? (displayRating % 1 === 0 ? String(displayRating) : displayRating.toFixed(1)) : 'N/A'}
         <span className="text-muted-foreground font-normal">/5</span>
       </span>
     </div>
