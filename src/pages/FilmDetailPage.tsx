@@ -21,6 +21,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 
+const SYNOPSIS_NOISE = [
+  /submit your (short )?film/i,
+  /https?:\/\/\S+/,
+  /subscribe/i,
+  /abonnez-vous/i,
+  /shortverse\.com/i,
+  /shortoftheweek\.com/i,
+  /watch more/i,
+  /follow us/i,
+];
+
+function isSynopsisClean(synopsis: string | null | undefined): boolean {
+  if (!synopsis || synopsis.length < 20) return false;
+  return !SYNOPSIS_NOISE.some((p) => p.test(synopsis));
+}
+
 export default function FilmDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -86,8 +102,8 @@ export default function FilmDetailPage() {
 
   const handleSendFilm = async (receiverId: string, receiverUsername: string) => {
     if (!user || !film) return;
-    const filmUrl = `${window.location.origin}/films/${id}`;
-    const message = `🎬 [film:${id}:${getFilmTitle(film)}:${film.thumbnail_url || ''}]`;
+    const filmUrl = `${window.location.origin}/films/${filmId}`;
+    const message = `🎬 [film:${filmId}:${getFilmTitle(film)}:${film.thumbnail_url || ''}]`;
     await supabase.from('messages').insert({
       sender_id: user.id,
       receiver_id: receiverId,
@@ -282,14 +298,12 @@ export default function FilmDetailPage() {
           )}
         </div>
 
-        {/* SYNOPSIS DÉSACTIVÉ — décommenter pour réactiver
-        {film.synopsis && (
+        {film.synopsis && isSynopsisClean(film.synopsis) && (
           <div className="mb-8">
             <h2 className="font-display text-xl font-semibold mb-3">Synopsis</h2>
             <p className="text-muted-foreground leading-relaxed">{film.synopsis}</p>
           </div>
         )}
-        */}
 
         {/* ===== ACTION BUTTONS: RATE & REVIEW / SHARE / TOP 3 ===== */}
         <div ref={rateRef} className="flex gap-3 mb-8">
