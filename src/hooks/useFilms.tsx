@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Film, FilmGenre, FilmRating, ReviewLike } from '@/types/database';
+import { Film, FilmGenre, FilmRating, ReviewLike, slugify } from '@/types/database';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
@@ -575,5 +575,38 @@ export function useAddToHistory() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['watch-history'] });
     },
+  });
+}
+
+export function useDirectorBySlug(slug: string) {
+  return useQuery({
+    queryKey: ['director-by-slug', slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('films')
+        .select('director')
+        .not('director', 'is', null);
+      if (error) throw error;
+      const directors = [...new Set((data as { director: string }[]).map(f => f.director).filter(Boolean))];
+      return directors.find(d => slugify(d) === slug) || null;
+    },
+    enabled: !!slug,
+  });
+}
+
+export function useFilmsByDirector(director: string) {
+  return useQuery({
+    queryKey: ['films', 'director', director],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('films')
+        .select('*')
+        .eq('director', director)
+        .order('quality_score', { ascending: false })
+        .order('view_count', { ascending: false });
+      if (error) throw error;
+      return data as Film[];
+    },
+    enabled: !!director,
   });
 }

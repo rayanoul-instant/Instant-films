@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useFilm, useFilmRatings, useRateFilm, useToggleFavorite, useFavorites, useAddToHistory, useTop3, useToggleTop3, useReviewLikes, useToggleReviewLike, useToggleMainstream, useDeleteFilm, useDeleteRating } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowingList } from '@/hooks/useFollowers';
-import { GENRE_LABELS, getFilmTitle } from '@/types/database';
+import { GENRE_LABELS, FilmGenre, getFilmTitle } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { usePageMeta } from '@/hooks/usePageMeta';
@@ -172,7 +172,26 @@ export default function FilmDetailPage() {
   const displayAvgRating = film.average_rating ? film.average_rating / 2 : 0;
 
   return (
-    <Layout>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "VideoObject",
+            "name": getFilmTitle(film),
+            "description": isSynopsisClean(film.synopsis) ? film.synopsis : undefined,
+            "duration": film.duration_minutes ? `PT${film.duration_minutes}M` : undefined,
+            "thumbnailUrl": film.thumbnail_url || undefined,
+            "uploadDate": film.release_year ? `${film.release_year}-01-01` : undefined,
+            "director": film.director ? { "@type": "Person", "name": film.director } : undefined,
+            "genre": (film.genres || []).map(g => GENRE_LABELS[g as FilmGenre]).filter(Boolean),
+            "url": `${window.location.origin}/films/${film.slug}`,
+            "embedUrl": film.video_url || undefined,
+          }),
+        }}
+      />
+      <Layout>
       <div className="container px-4 py-8">
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors">
           <ArrowLeft className="w-4 h-4" />
@@ -541,5 +560,6 @@ export default function FilmDetailPage() {
         </div>
       </div>
     </Layout>
+    </>
   );
 }

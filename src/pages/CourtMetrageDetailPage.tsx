@@ -174,12 +174,14 @@ export default function CourtMetrageDetailPage() {
           )}
         </div>
 
+        {/* SYNOPSIS DÉSACTIVÉ — décommenter pour réactiver
         {film.synopsis && (
           <div>
             <h2 className="font-display text-lg font-semibold mb-2">Synopsis</h2>
             <p className="text-muted-foreground leading-relaxed">{film.synopsis}</p>
           </div>
         )}
+        */}
       </motion.div>
       </AnimatePresence>
     </Layout>

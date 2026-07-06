@@ -15,7 +15,7 @@ import logoInstant from '@/assets/logo-instant.png';
 const Index = () => {
   usePageMeta(
     'Instant Films - La plateforme de streaming dédiée aux courts métrages',
-    'Découvrez, visionnez et partagez les meilleurs courts métrages libres de droits sur Instant Films.'
+    'Instant Films est la plateforme de streaming dédiée aux meilleurs courts métrages. Découvrez, notez et partagez des films avec une communauté de cinéphiles.'
   );
   const { user } = useAuth();
   const { data: popularFilms, isLoading: loadingPopular } = useFilms({ sortBy: 'popular' });

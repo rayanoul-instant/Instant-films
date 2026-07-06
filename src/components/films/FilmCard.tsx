@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Clock, Star, Play, Bookmark, Trophy, Trash2, Tag, X } from 'lucide-react';
-import { Film, FilmGenre, GENRE_LABELS, getFilmTitle } from '@/types/database';
+import { Film, FilmGenre, GENRE_LABELS, getFilmTitle, slugify } from '@/types/database';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToggleFavorite, useFavorites, useSetGenres, useDeleteFilm } from '@/hooks/useFilms';
@@ -188,9 +188,13 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
           </h3>
 
           {film.director && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <Link
+              to={`/realisateur/${slugify(film.director)}`}
+              onClick={e => e.stopPropagation()}
+              className="text-sm text-muted-foreground mt-1 hover:text-primary transition-colors line-clamp-1 block"
+            >
               {film.director}
-            </p>
+            </Link>
           )}
 
           {/* Rating & Genres */}
@@ -208,22 +212,29 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
 
             <div className="flex gap-1">
               {(film.genres || []).slice(0, 2).map((genre) => (
-                <Badge
+                <Link
                   key={genre}
-                  variant="outline"
-                  className="text-xs border-border text-muted-foreground"
+                  to={`/genre/${genre}`}
+                  onClick={e => e.stopPropagation()}
                 >
-                  {GENRE_LABELS[genre]}
-                </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {GENRE_LABELS[genre]}
+                  </Badge>
+                </Link>
               ))}
             </div>
           </div>
 
+          {/* SYNOPSIS DÉSACTIVÉ — décommenter pour réactiver
           {featured && film.synopsis && (
             <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
               {film.synopsis}
             </p>
           )}
+          */}
         </div>
       </Link>
 

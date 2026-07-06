@@ -126,3 +126,12 @@ export const GENRE_LABELS: Record<FilmGenre, string> = {
 };
 
 export const AVATAR_BASES = ['default', 'cat', 'dog', 'robot', 'alien', 'ghost'];
+
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
