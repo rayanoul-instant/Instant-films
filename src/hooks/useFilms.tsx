@@ -553,6 +553,29 @@ export function useSetGenres() {
   });
 }
 
+export function useUpdateFilmTitle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ filmId, displayTitle }: { filmId: string; displayTitle: string }) => {
+      const { error } = await supabase.from('films').update({ display_title: displayTitle || null }).eq('id', filmId);
+      if (error) throw error;
+    },
+    onSuccess: (_, { filmId, displayTitle }) => {
+      queryClient.setQueriesData(
+        { queryKey: ['films'] },
+        (old: Film[] | undefined) => old?.map(f => f.id === filmId ? { ...f, display_title: displayTitle || null } : f)
+      );
+      queryClient.setQueryData(
+        ['film', filmId],
+        (old: Film | undefined) => old ? { ...old, display_title: displayTitle || null } : old
+      );
+    },
+    onError: (error: any) => {
+      toast.error('Erreur lors de la mise à jour du titre — ' + (error?.message || 'unknown error'));
+    },
+  });
+}
+
 export function useAddToHistory() {
   const queryClient = useQueryClient();
   const { user } = useAuth();

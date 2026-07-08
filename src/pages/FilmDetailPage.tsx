@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Calendar, User, Star, Bookmark, Share2, ThumbsUp, MessageSquare, Film, ArrowUpRight, Send, Trophy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, User, Star, Bookmark, Share2, ThumbsUp, MessageSquare, Film, ArrowUpRight, Send, Trophy, Trash2, Pencil, Check, X } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { VideoPlayer } from '@/components/films/VideoPlayer';
 import { StarRating } from '@/components/films/StarRating';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useFilm, useFilmRatings, useRateFilm, useToggleFavorite, useFavorites, useAddToHistory, useTop3, useToggleTop3, useReviewLikes, useToggleReviewLike, useToggleMainstream, useDeleteFilm, useDeleteRating } from '@/hooks/useFilms';
+import { useFilm, useFilmRatings, useRateFilm, useToggleFavorite, useFavorites, useAddToHistory, useTop3, useToggleTop3, useReviewLikes, useToggleReviewLike, useToggleMainstream, useDeleteFilm, useDeleteRating, useUpdateFilmTitle } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import { useFollowingList } from '@/hooks/useFollowers';
 import { GENRE_LABELS, FilmGenre, getFilmTitle } from '@/types/database';
@@ -57,7 +57,10 @@ export default function FilmDetailPage() {
   const toggleMainstream = useToggleMainstream();
   const deleteFilm = useDeleteFilm();
   const deleteRating = useDeleteRating();
+  const updateFilmTitle = useUpdateFilmTitle();
   const queryClient = useQueryClient();
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
   const isAdmin = profile?.is_admin === true;
   usePageMeta(
     film ? `${getFilmTitle(film)} - Instant Films` : 'Instant Films',
@@ -220,7 +223,53 @@ export default function FilmDetailPage() {
         <div className="mb-6">
           <div className="flex flex-row items-start justify-between gap-3 mb-4">
             <div className="flex-1 min-w-0">
-              <h1 className="font-display text-3xl md:text-4xl font-bold mb-2">{getFilmTitle(film)}</h1>
+              {isAdmin && editingTitle ? (
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    autoFocus
+                    value={titleDraft}
+                    onChange={e => setTitleDraft(e.target.value)}
+                    onKeyDown={async e => {
+                      if (e.key === 'Enter') {
+                        await updateFilmTitle.mutateAsync({ filmId: film.id, displayTitle: titleDraft.trim() });
+                        setEditingTitle(false);
+                        toast.success('Titre mis à jour');
+                      }
+                      if (e.key === 'Escape') setEditingTitle(false);
+                    }}
+                    className="flex-1 font-display text-2xl font-bold bg-secondary border border-primary rounded-lg px-3 py-1 outline-none text-foreground"
+                  />
+                  <button
+                    onClick={async () => {
+                      await updateFilmTitle.mutateAsync({ filmId: film.id, displayTitle: titleDraft.trim() });
+                      setEditingTitle(false);
+                      toast.success('Titre mis à jour');
+                    }}
+                    className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:opacity-90"
+                  >
+                    <Check className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setEditingTitle(false)}
+                    className="p-1.5 rounded-lg bg-secondary text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mb-2 group/title">
+                  <h1 className="font-display text-3xl md:text-4xl font-bold">{getFilmTitle(film)}</h1>
+                  {isAdmin && (
+                    <button
+                      onClick={() => { setTitleDraft(getFilmTitle(film)); setEditingTitle(true); }}
+                      className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-primary"
+                      title="Modifier le titre"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
               {film.director && (
                 <p className="text-lg text-muted-foreground flex items-center gap-2">
                   <User className="w-4 h-4" />{film.director}
