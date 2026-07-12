@@ -10,6 +10,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SplashScreen } from "@/components/layout/SplashScreen";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopDock } from "@/components/layout/DesktopDock";
+import { Analytics } from '@vercel/analytics/react';
 
 const Index = lazy(() => import("./pages/Index"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -101,11 +102,12 @@ const App = () => {
               <ScrollManager />
               <DesktopDock />
               <BottomNav />
-<AnimatedRoutes />
+              <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
+      <Analytics />
     </ErrorBoundary>
   );
 };
