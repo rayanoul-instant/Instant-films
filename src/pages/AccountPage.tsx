@@ -64,10 +64,10 @@ export default function AccountPage() {
   const queryClient = useQueryClient();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showAvatarEdit, setShowAvatarEdit] = useState(false);
   const [showFriendsDrawer, setShowFriendsDrawer] = useState(false);
   const [friendsTab, setFriendsTab] = useState<'friends' | 'requests'>('friends');
   const [showSettings, setShowSettings] = useState(false);
-  const [editTab, setEditTab] = useState<'profile' | 'avatar' | 'top3'>('profile');
   const [editUsername, setEditUsername] = useState('');
   const [editBio, setEditBio] = useState('');
   const [avatarColor, setAvatarColor] = useState('#7C3AED');
@@ -96,26 +96,33 @@ export default function AccountPage() {
   if (!user) return <Navigate to="/auth" replace />;
 
   const openEdit = () => {
-    const acc = profile?.avatar_accessories as any;
     setEditUsername(profile?.username || '');
     setEditBio(profile?.bio || '');
+    setIsEditing(true);
+  };
+
+  const openAvatarEdit = () => {
+    const acc = profile?.avatar_accessories as any;
     setAvatarColor(acc?.color || '#7C3AED');
     setAvatarHat(acc?.hat || 'none');
     setAvatarGlasses(acc?.glasses || 'none');
     setAvatarMask(acc?.mask || 'none');
-    setEditTab('profile');
-    setIsEditing(true);
+    setShowAvatarEdit(true);
   };
 
   const handleSaveProfile = async () => {
     if (!editUsername.trim()) { toast.error('Username cannot be empty'); return; }
-    const { error } = await updateProfile({
-      username: editUsername,
-      bio: editBio,
-      avatar_accessories: { color: avatarColor, hat: avatarHat, glasses: avatarGlasses, mask: avatarMask } as any,
-    });
+    const { error } = await updateProfile({ username: editUsername, bio: editBio });
     if (error) { toast.error('Failed to update profile'); }
     else { toast.success('Profile updated!'); setIsEditing(false); }
+  };
+
+  const handleSaveAvatar = async () => {
+    const { error } = await updateProfile({
+      avatar_accessories: { color: avatarColor, hat: avatarHat, glasses: avatarGlasses, mask: avatarMask } as any,
+    });
+    if (error) { toast.error('Failed to update avatar'); }
+    else { toast.success('Avatar updated!'); setShowAvatarEdit(false); }
   };
 
   const handleToggleTop3 = async (filmId: string) => {
@@ -157,199 +164,88 @@ export default function AccountPage() {
         >
           {isEditing ? (
             <div className="space-y-6">
-              {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-secondary rounded-lg w-fit">
-                {(['profile', 'avatar', 'top3'] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => setEditTab(tab)}
-                    className={cn(
-                      "px-4 py-2 rounded-md text-sm font-medium transition-all",
-                      editTab === tab
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {tab === 'profile' ? 'Profile' : tab === 'avatar' ? 'Avatar' : 'Top 3'}
-                  </button>
-                ))}
+              {/* Username */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Username</label>
+                <Input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="bg-secondary border-border" />
+              </div>
+              {/* Bio */}
+              <div>
+                <label className="text-sm text-muted-foreground mb-1 block">Description</label>
+                <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="bg-secondary border-border" placeholder="Tell us about yourself..." rows={3} />
               </div>
 
-              {/* Profile Tab */}
-              {editTab === 'profile' && (
-                <div className="flex flex-col sm:flex-row gap-6 items-center">
-                  <AvatarDisplay
-                    color={avatarColor}
-                    hat={avatarHat === 'none' ? undefined : avatarHat}
-                    glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
-                    mask={avatarMask === 'none' ? undefined : avatarMask}
-                    size="xl"
-                  />
-                  <div className="flex-1 space-y-4 w-full">
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1 block">Username</label>
-                      <Input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} className="bg-secondary border-border" />
+              {/* Top 3 */}
+              <div>
+                <p className="text-sm font-semibold mb-3 flex items-center gap-2">
+                  <Trophy className="w-4 h-4" style={{ color: '#c5a028' }} /> Top 3
+                </p>
+                <div className="space-y-2">
+                  {topFavorites.map((fav, i) => fav.film && (
+                    <div key={fav.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+                      <span className="text-primary font-bold text-sm">#{i + 1}</span>
+                      <div className="w-10 h-7 rounded overflow-hidden flex-shrink-0 bg-muted">
+                        {fav.film.thumbnail_url && <img src={fav.film.thumbnail_url} alt="" className="w-full h-full object-cover" />}
+                      </div>
+                      <span className="flex-1 text-sm font-medium truncate">{fav.film.title}</span>
+                      <button onClick={() => handleToggleTop3(fav.film_id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground mb-1 block">Bio</label>
-                      <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="bg-secondary border-border" placeholder="Tell us about yourself..." rows={2} />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Avatar Tab */}
-              {editTab === 'avatar' && (
-                <div className="space-y-6">
-                  <div className="flex justify-center">
-                    <AvatarDisplay
-                      color={avatarColor}
-                      hat={avatarHat === 'none' ? undefined : avatarHat}
-                      glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
-                      mask={avatarMask === 'none' ? undefined : avatarMask}
-                      size="xl"
-                    />
-                  </div>
-                  {/* Color */}
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Color</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATAR_COLORS.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => setAvatarColor(c.value)}
-                          title={c.label}
-                          className={cn("w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
-                            avatarColor === c.value ? "border-white scale-110" : "border-transparent opacity-70 hover:opacity-100"
-                          )}
-                          style={{ backgroundColor: c.value }}
-                        >
-                          {avatarColor === c.value && <Check className="w-3 h-3 text-white" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Hat */}
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Hat</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATAR_HATS.map((h) => (
-                        <button key={h.id} onClick={() => setAvatarHat(h.id)}
-                          className={cn("p-2 rounded-lg border transition-all",
-                            avatarHat === h.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                          )}>
-                          {h.image
-                            ? <img src={h.image} alt={h.label} className="w-10 h-10 object-contain" />
-                            : <span className="text-xs px-1">—</span>
-                          }
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Glasses */}
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Glasses</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATAR_GLASSES.map((g) => (
-                        <button key={g.id} onClick={() => setAvatarGlasses(g.id)}
-                          className={cn("p-2 rounded-lg border transition-all",
-                            avatarGlasses === g.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                          )}>
-                          {g.image
-                            ? <img src={g.image} alt={g.label} className="w-10 h-10 object-contain" />
-                            : <span className="text-xs px-1">—</span>
-                          }
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Mask */}
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Mask</p>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATAR_MASKS.map((m) => (
-                        <button key={m.id} onClick={() => setAvatarMask(m.id)}
-                          className={cn("p-2 rounded-lg border transition-all",
-                            avatarMask === m.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                          )}>
-                          {m.image
-                            ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" />
-                            : <span className="text-xs px-1">—</span>
-                          }
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Top 3 Tab */}
-              {editTab === 'top3' && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">Choose up to 3 favorite films to display on your profile. You currently have {favorites?.length || 0} favorites — the first 3 will be shown.</p>
-
-                  {/* Current top 3 */}
-                  <div className="space-y-2">
-                    {topFavorites.map((fav, i) => fav.film && (
-                      <div key={fav.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-                        <span className="text-primary font-bold text-sm">#{i + 1}</span>
-                        <div className="w-10 h-7 rounded overflow-hidden flex-shrink-0 bg-muted">
-                          {fav.film.thumbnail_url && <img src={fav.film.thumbnail_url} alt="" className="w-full h-full object-cover" />}
+                  ))}
+                  {topFavorites.length < 3 && (
+                    <div className="border border-dashed border-border rounded-lg p-3">
+                      <Input
+                        placeholder="Rechercher un film à ajouter..."
+                        value={searchTop3}
+                        onChange={(e) => setSearchTop3(e.target.value)}
+                        className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
+                      />
+                      {filteredSearchFilms.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {filteredSearchFilms.map(f => (
+                            <button
+                              key={f.id}
+                              onClick={() => { handleToggleTop3(f.id); setSearchTop3(''); }}
+                              className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors text-left"
+                            >
+                              <Plus className="w-4 h-4 text-primary flex-shrink-0" />
+                              <span className="text-sm truncate">{f.title}</span>
+                            </button>
+                          ))}
                         </div>
-                        <span className="flex-1 text-sm font-medium truncate">{fav.film.title}</span>
-                        <button
-                          onClick={() => handleToggleTop3(fav.film_id)}
-                          className="text-muted-foreground hover:text-destructive transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                    {topFavorites.length < 3 && (
-                      <div className="border border-dashed border-border rounded-lg p-3">
-                        <Input
-                          placeholder="Search a film to add..."
-                          value={searchTop3}
-                          onChange={(e) => setSearchTop3(e.target.value)}
-                          className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
-                        />
-                        {filteredSearchFilms.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            {filteredSearchFilms.map(f => (
-                              <button
-                                key={f.id}
-                                onClick={() => { handleToggleTop3(f.id); setSearchTop3(''); }}
-                                className="w-full flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors text-left"
-                              >
-                                <Plus className="w-4 h-4 text-primary flex-shrink-0" />
-                                <span className="text-sm truncate">{f.title}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div className="flex gap-2">
                 <Button onClick={handleSaveProfile} className="btn-cinema">
-                  <Save className="w-4 h-4 mr-2" /> Save
+                  <Save className="w-4 h-4 mr-2" /> Enregistrer
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-border">Cancel</Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-border">Annuler</Button>
               </div>
             </div>
           ) : (
             <div>
               <div className="flex flex-row gap-4 items-center">
-                <AvatarDisplay
-                  color={currentAcc?.color}
-                  hat={currentAcc?.hat}
-                  glasses={currentAcc?.glasses}
-                  mask={currentAcc?.mask}
-                  size="xl"
-                />
+                <div className="relative flex-shrink-0">
+                  <AvatarDisplay
+                    color={currentAcc?.color}
+                    hat={currentAcc?.hat}
+                    glasses={currentAcc?.glasses}
+                    mask={currentAcc?.mask}
+                    size="xl"
+                  />
+                  <button
+                    onClick={openAvatarEdit}
+                    title="Personnaliser l'avatar"
+                    className="absolute -top-1 -left-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-base hover:bg-secondary transition-colors shadow-sm"
+                  >
+                    😊
+                  </button>
+                </div>
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2 gap-2">
                     <div>
@@ -498,6 +394,93 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* Avatar Edit Modal */}
+      {showAvatarEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowAvatarEdit(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="relative bg-card border border-border rounded-2xl p-6 z-10 w-full max-w-sm overflow-y-auto"
+            style={{ maxHeight: '85vh' }}
+          >
+            <h2 className="font-display text-lg font-bold mb-5">Mon avatar</h2>
+            <div className="flex justify-center mb-6">
+              <AvatarDisplay
+                color={avatarColor}
+                hat={avatarHat === 'none' ? undefined : avatarHat}
+                glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
+                mask={avatarMask === 'none' ? undefined : avatarMask}
+                size="xl"
+              />
+            </div>
+            <div className="space-y-5">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Couleur</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_COLORS.map((c) => (
+                    <button key={c.id} onClick={() => setAvatarColor(c.value)} title={c.label}
+                      className={cn("w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
+                        avatarColor === c.value ? "border-white scale-110" : "border-transparent opacity-70 hover:opacity-100"
+                      )}
+                      style={{ backgroundColor: c.value }}
+                    >
+                      {avatarColor === c.value && <Check className="w-3 h-3 text-white" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Chapeau</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_HATS.map((h) => (
+                    <button key={h.id} onClick={() => setAvatarHat(h.id)}
+                      className={cn("p-2 rounded-lg border transition-all",
+                        avatarHat === h.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
+                      )}>
+                      {h.image ? <img src={h.image} alt={h.label} className="w-10 h-10 object-contain" /> : <span className="text-xs px-1">—</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Lunettes</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_GLASSES.map((g) => (
+                    <button key={g.id} onClick={() => setAvatarGlasses(g.id)}
+                      className={cn("p-2 rounded-lg border transition-all",
+                        avatarGlasses === g.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
+                      )}>
+                      {g.image ? <img src={g.image} alt={g.label} className="w-10 h-10 object-contain" /> : <span className="text-xs px-1">—</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Masque</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_MASKS.map((m) => (
+                    <button key={m.id} onClick={() => setAvatarMask(m.id)}
+                      className={cn("p-2 rounded-lg border transition-all",
+                        avatarMask === m.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
+                      )}>
+                      {m.image ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" /> : <span className="text-xs px-1">—</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <Button onClick={handleSaveAvatar} className="btn-cinema flex-1">
+                <Save className="w-4 h-4 mr-2" /> Enregistrer
+              </Button>
+              <Button variant="outline" onClick={() => setShowAvatarEdit(false)} className="border-border">Annuler</Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Friends Drawer */}
       {showFriendsDrawer && (
