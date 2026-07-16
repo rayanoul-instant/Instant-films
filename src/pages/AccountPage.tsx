@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy, UserPlus, Users, Settings, LogOut, History } from 'lucide-react';
+import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy, UserPlus, Users, Settings, LogOut, History, Smile } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
 import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS } from '@/components/films/AvatarDisplay';
@@ -241,9 +241,9 @@ export default function AccountPage() {
                   <button
                     onClick={openAvatarEdit}
                     title="Personnaliser l'avatar"
-                    className="absolute -top-1 -left-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center text-base hover:bg-secondary transition-colors shadow-sm"
+                    className="absolute -top-1 -left-1 w-7 h-7 rounded-full bg-card border border-border flex items-center justify-center hover:bg-secondary transition-colors shadow-sm text-muted-foreground hover:text-foreground"
                   >
-                    😊
+                    <Smile className="w-3.5 h-3.5" />
                   </button>
                 </div>
                 <div className="flex-1">
