@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy, UserPlus, Users, Settings, LogOut, History, Smile } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
-import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS } from '@/components/films/AvatarDisplay';
+import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS, AVATAR_BODY } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -74,6 +74,7 @@ export default function AccountPage() {
   const [avatarHat, setAvatarHat] = useState('none');
   const [avatarGlasses, setAvatarGlasses] = useState('none');
   const [avatarMask, setAvatarMask] = useState('none');
+  const [avatarBody, setAvatarBody] = useState('none');
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [searchTop3, setSearchTop3] = useState('');
 
@@ -107,6 +108,7 @@ export default function AccountPage() {
     setAvatarHat(acc?.hat || 'none');
     setAvatarGlasses(acc?.glasses || 'none');
     setAvatarMask(acc?.mask || 'none');
+    setAvatarBody(acc?.body || 'none');
     setShowAvatarEdit(true);
   };
 
@@ -119,7 +121,7 @@ export default function AccountPage() {
 
   const handleSaveAvatar = async () => {
     const { error } = await updateProfile({
-      avatar_accessories: { color: avatarColor, hat: avatarHat, glasses: avatarGlasses, mask: avatarMask } as any,
+      avatar_accessories: { color: avatarColor, hat: avatarHat, glasses: avatarGlasses, mask: avatarMask, body: avatarBody } as any,
     });
     if (error) { toast.error('Failed to update avatar'); }
     else { toast.success('Avatar updated!'); setShowAvatarEdit(false); }
@@ -236,6 +238,7 @@ export default function AccountPage() {
                     hat={currentAcc?.hat}
                     glasses={currentAcc?.glasses}
                     mask={currentAcc?.mask}
+                    body={currentAcc?.body}
                     size="xl"
                   />
                   <button
@@ -413,6 +416,7 @@ export default function AccountPage() {
                 hat={avatarHat === 'none' ? undefined : avatarHat}
                 glasses={avatarGlasses === 'none' ? undefined : avatarGlasses}
                 mask={avatarMask === 'none' ? undefined : avatarMask}
+                body={avatarBody === 'none' ? undefined : avatarBody}
                 size="xl"
               />
             </div>
@@ -466,7 +470,20 @@ export default function AccountPage() {
                       className={cn("p-2 rounded-lg border transition-all",
                         avatarMask === m.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
                       )}>
-                      {m.image ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" /> : <span className="text-xs px-1">—</span>}
+                      {m.image ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" style={m.screen ? { mixBlendMode: 'screen', background: '#000' } : undefined} /> : <span className="text-xs px-1">—</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Corps</p>
+                <div className="flex flex-wrap gap-2">
+                  {AVATAR_BODY.map((b) => (
+                    <button key={b.id} onClick={() => setAvatarBody(b.id)}
+                      className={cn("p-2 rounded-lg border transition-all",
+                        avatarBody === b.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
+                      )}>
+                      {b.image ? <img src={b.image} alt={b.label} className="w-10 h-10 object-contain" style={b.screen ? { mixBlendMode: 'screen', background: '#000' } : undefined} /> : <span className="text-xs px-1">—</span>}
                     </button>
                   ))}
                 </div>
