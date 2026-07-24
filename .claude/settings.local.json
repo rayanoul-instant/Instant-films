@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(ls \"c:/Users/rayan/OneDrive/Documents/Instant/Instant-films/\"*.csv)",
-      "Bash(ls \"c:/Users/rayan/OneDrive/Documents/Instant/Instant-films/scripts/\"*.csv)"
+      "Bash(ls \"c:/Users/rayan/OneDrive/Documents/Instant/Instant-films/scripts/\"*.csv)",
+      "Bash(ffmpeg -version)",
+      "Bash(yt-dlp --version)",
+      "Bash(python -m whisper --help)",
+      "PowerShell(node --version)",
+      "PowerShell(python --version)",
+      "PowerShell(ffmpeg -version 2>&1)",
+      "PowerShell(yt-dlp --version)",
+      "PowerShell(python -m whisper --help 2>&1)"
     ]
   }
 }

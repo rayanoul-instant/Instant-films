@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Star, Clock, Bookmark, Edit2, Save, Film, ChevronDown, ThumbsUp, Check, X, Plus, Eye, Trophy, UserPlus, Users, Settings, LogOut, History, Smile } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
-import { AvatarDisplay, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS, AVATAR_BODY } from '@/components/films/AvatarDisplay';
+import { AvatarDisplay, AccThumb, AVATAR_COLORS, AVATAR_HATS, AVATAR_GLASSES, AVATAR_MASKS, AVATAR_BODY } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -198,7 +198,7 @@ export default function AccountPage() {
                   {topFavorites.length < 3 && (
                     <div className="border border-dashed border-border rounded-lg p-3">
                       <Input
-                        placeholder="Rechercher un film à ajouter..."
+                        placeholder="Search for a film to add..."
                         value={searchTop3}
                         onChange={(e) => setSearchTop3(e.target.value)}
                         className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
@@ -224,9 +224,9 @@ export default function AccountPage() {
 
               <div className="flex gap-2">
                 <Button onClick={handleSaveProfile} className="btn-cinema">
-                  <Save className="w-4 h-4 mr-2" /> Enregistrer
+                  <Save className="w-4 h-4 mr-2" /> Save
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-border">Annuler</Button>
+                <Button variant="outline" onClick={() => setIsEditing(false)} className="border-border">Cancel</Button>
               </div>
             </div>
           ) : (
@@ -409,7 +409,7 @@ export default function AccountPage() {
             className="relative bg-card border border-border rounded-2xl p-6 z-10 w-full max-w-sm overflow-y-auto"
             style={{ maxHeight: '85vh' }}
           >
-            <h2 className="font-display text-lg font-bold mb-5">Mon avatar</h2>
+            <h2 className="font-display text-lg font-bold mb-5">My avatar</h2>
             <div className="flex justify-center mb-6">
               <AvatarDisplay
                 color={avatarColor}
@@ -422,7 +422,7 @@ export default function AccountPage() {
             </div>
             <div className="space-y-5">
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Couleur</p>
+                <p className="text-xs text-muted-foreground mb-2">Color</p>
                 <div className="flex flex-wrap gap-2">
                   {AVATAR_COLORS.map((c) => (
                     <button key={c.id} onClick={() => setAvatarColor(c.value)} title={c.label}
@@ -437,20 +437,15 @@ export default function AccountPage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Chapeau</p>
+                <p className="text-xs text-muted-foreground mb-2">Hat</p>
                 <div className="flex flex-wrap gap-2">
                   {AVATAR_HATS.map((h) => (
-                    <button key={h.id} onClick={() => setAvatarHat(h.id)}
-                      className={cn("p-2 rounded-lg border transition-all",
-                        avatarHat === h.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                      )}>
-                      {h.image ? <img src={h.image} alt={h.label} className="w-10 h-10 object-contain" /> : <span className="text-xs px-1">—</span>}
-                    </button>
+                    <AccThumb key={h.id} acc={h} selected={avatarHat === h.id} onClick={() => setAvatarHat(h.id)} />
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Lunettes</p>
+                <p className="text-xs text-muted-foreground mb-2">Glasses</p>
                 <div className="flex flex-wrap gap-2">
                   {AVATAR_GLASSES.map((g) => (
                     <button key={g.id} onClick={() => setAvatarGlasses(g.id)}
@@ -463,37 +458,27 @@ export default function AccountPage() {
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Masque</p>
+                <p className="text-xs text-muted-foreground mb-2">Mask</p>
                 <div className="flex flex-wrap gap-2">
                   {AVATAR_MASKS.map((m) => (
-                    <button key={m.id} onClick={() => setAvatarMask(m.id)}
-                      className={cn("p-2 rounded-lg border transition-all",
-                        avatarMask === m.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                      )}>
-                      {m.image ? <img src={m.image} alt={m.label} className="w-10 h-10 object-contain" style={m.screen ? { mixBlendMode: 'screen', background: '#000' } : undefined} /> : <span className="text-xs px-1">—</span>}
-                    </button>
+                    <AccThumb key={m.id} acc={m} selected={avatarMask === m.id} onClick={() => setAvatarMask(m.id)} />
                   ))}
                 </div>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Corps</p>
+                <p className="text-xs text-muted-foreground mb-2">Body</p>
                 <div className="flex flex-wrap gap-2">
                   {AVATAR_BODY.map((b) => (
-                    <button key={b.id} onClick={() => setAvatarBody(b.id)}
-                      className={cn("p-2 rounded-lg border transition-all",
-                        avatarBody === b.id ? "border-primary bg-primary/10" : "border-border bg-secondary hover:border-muted-foreground"
-                      )}>
-                      {b.image ? <img src={b.image} alt={b.label} className="w-10 h-10 object-contain" style={b.screen ? { mixBlendMode: 'screen', background: '#000' } : undefined} /> : <span className="text-xs px-1">—</span>}
-                    </button>
+                    <AccThumb key={b.id} acc={b} selected={avatarBody === b.id} onClick={() => setAvatarBody(b.id)} />
                   ))}
                 </div>
               </div>
             </div>
             <div className="flex gap-2 mt-6">
               <Button onClick={handleSaveAvatar} className="btn-cinema flex-1">
-                <Save className="w-4 h-4 mr-2" /> Enregistrer
+                <Save className="w-4 h-4 mr-2" /> Save
               </Button>
-              <Button variant="outline" onClick={() => setShowAvatarEdit(false)} className="border-border">Annuler</Button>
+              <Button variant="outline" onClick={() => setShowAvatarEdit(false)} className="border-border">Cancel</Button>
             </div>
           </motion.div>
         </div>

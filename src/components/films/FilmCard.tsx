@@ -139,7 +139,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
                   ? 'opacity-100 bg-primary/30 border-primary text-primary'
                   : 'opacity-0 group-hover:opacity-100 bg-black/50 border-white/30 text-white/70 hover:border-primary hover:text-primary'
               )}
-              title="Modifier les genres"
+              title="Edit genres"
             >
               <Tag className="w-3.5 h-3.5" />
             </button>
@@ -164,13 +164,13 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
                     })}
                     className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                   >
-                    Confirmer
+                    Confirm
                   </button>
                   <button
                     onClick={(e) => handleAdminAction(e, () => setConfirmDelete(false))}
                     className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/50 text-white/80 hover:bg-black/70 transition-colors"
                   >
-                    Annuler
+                    Cancel
                   </button>
                 </div>
               )}

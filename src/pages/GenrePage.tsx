@@ -7,27 +7,27 @@ import { usePageMeta } from '@/hooks/usePageMeta';
 import { GENRE_LABELS, FilmGenre } from '@/types/database';
 
 const GENRE_DESCRIPTIONS: Partial<Record<FilmGenre, string>> = {
-  drama: 'Des histoires humaines, intenses et bouleversantes en format court.',
-  comedy: 'Rires et légèreté — les meilleures comédies en quelques minutes.',
-  animation: 'Des univers visuels uniques et créatifs, du dessin animé à la 3D.',
-  horror: 'Frissons et suspense garantis — l\'horreur concentrée en court métrage.',
-  romance: 'Des histoires d\'amour touchantes racontées en quelques minutes.',
-  scifi: 'Futurs alternatifs et mondes imaginaires — la science-fiction au format court.',
-  experimental: 'Art visuel et cinéma d\'avant-garde — des films qui repoussent les limites.',
-  kid: 'Des histoires adaptées à tous les âges, pleines d\'imagination.',
-  mainstream: 'Les courts métrages les plus vus et appréciés sur Instant Films.',
+  drama: 'Intense and moving human stories told in short form.',
+  comedy: 'Laughs and lightness — the best comedies in just a few minutes.',
+  animation: 'Unique and creative visual worlds, from hand-drawn to 3D.',
+  horror: 'Chills and suspense guaranteed — horror distilled into short films.',
+  romance: 'Touching love stories told in just a few minutes.',
+  scifi: 'Alternative futures and imaginary worlds — science fiction in short form.',
+  experimental: 'Visual art and avant-garde cinema — films that push the boundaries.',
+  kid: 'Stories for all ages, full of imagination.',
+  mainstream: 'The most watched and appreciated short films on Instant Films.',
 };
 
 export default function GenrePage() {
   const { genre } = useParams<{ genre: string }>();
   const filmGenre = genre as FilmGenre;
   const label = GENRE_LABELS[filmGenre] || genre || '';
-  const description = GENRE_DESCRIPTIONS[filmGenre] || `Découvrez les meilleurs courts métrages ${label} sur Instant Films.`;
+  const description = GENRE_DESCRIPTIONS[filmGenre] || `Discover the best ${label} short films on Instant Films.`;
 
   const { data: films, isLoading } = useFilms({ genre: filmGenre });
 
   usePageMeta(
-    `${label} — Courts métrages | Instant Films`,
+    `${label} — Short films | Instant Films`,
     description
   );
 
@@ -39,7 +39,7 @@ export default function GenrePage() {
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour
+          Back
         </Link>
 
         <h1 className="font-display text-3xl font-bold mb-2">{label}</h1>

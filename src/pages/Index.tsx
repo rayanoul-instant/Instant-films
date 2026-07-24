@@ -14,8 +14,8 @@ import logoInstant from '@/assets/logo-instant.png';
 
 const Index = () => {
   usePageMeta(
-    'Instant Films - La plateforme de streaming dédiée aux courts métrages',
-    'Instant Films est la plateforme de streaming dédiée aux meilleurs courts métrages. Découvrez, notez et partagez des films avec une communauté de cinéphiles.'
+    'Instant Films - The streaming platform dedicated to short films',
+    'Instant Films is the streaming platform dedicated to the best short films. Discover, rate and share films with a community of cinema lovers.'
   );
   const { user } = useAuth();
   const { data: popularFilms, isLoading: loadingPopular } = useFilms({ sortBy: 'popular' });

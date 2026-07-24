@@ -571,7 +571,7 @@ export function useUpdateFilmTitle() {
       );
     },
     onError: (error: any) => {
-      toast.error('Erreur lors de la mise à jour du titre — ' + (error?.message || 'unknown error'));
+      toast.error('Failed to update title — ' + (error?.message || 'unknown error'));
     },
   });
 }

@@ -17,7 +17,7 @@ export default function PolitiqueConfidentialitePage() {
         </Link>
 
         <h1 className="font-display text-3xl font-bold mb-2">Privacy policy</h1>
-        <p className="text-xs text-muted-foreground mb-8">Last updated: January 1, 2025</p>
+        <p className="text-xs text-muted-foreground mb-8">Last updated: July 25, 2026</p>
 
         <div className="prose prose-invert prose-sm max-w-none space-y-6 text-muted-foreground leading-relaxed">
           <section>
@@ -37,7 +37,7 @@ export default function PolitiqueConfidentialitePage() {
             <ul className="list-disc pl-5 space-y-1">
               <li><strong className="text-foreground">Account data</strong>: email address, username (upon registration);</li>
               <li><strong className="text-foreground">Usage data</strong>: films watched, reviews posted, lists created;</li>
-              <li><strong className="text-foreground">Technical cookies</strong>: strictly necessary for the service to function.</li>
+              <li><strong className="text-foreground">Cookies</strong>: see Section 7 for details.</li>
             </ul>
           </section>
 
@@ -48,17 +48,28 @@ export default function PolitiqueConfidentialitePage() {
               <li>Manage your account and authentication;</li>
               <li>Personalise your experience on the platform;</li>
               <li>Enable communication between users (internal messaging);</li>
-              <li>Improve the service and its features;</li>
+              <li>Improve the service and its features (analytics, subject to your consent);</li>
               <li>Comply with our legal obligations.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-foreground font-semibold text-lg mb-2">4. Legal basis</h2>
-            <p>
-              Processing of your data is based on your consent (Art. 6.1.a GDPR) and on the performance
-              of the contract established when you create your account (Art. 6.1.b GDPR).
-            </p>
+            <p>We rely on different legal bases depending on the purpose of processing:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <strong className="text-foreground">Performance of a contract (Art. 6.1.b GDPR):</strong>{' '}
+                the processing necessary to create and manage your account, authenticate you, and enable
+                internal messaging is based on the performance of the contract entered into when you
+                register on Instant Films.
+              </li>
+              <li>
+                <strong className="text-foreground">Consent (Art. 6.1.a GDPR):</strong>{' '}
+                the use of non-essential analytics cookies (Google Analytics 4) is based solely on your
+                prior, freely given consent. You may withdraw this consent at any time without affecting
+                the lawfulness of prior processing.
+              </li>
+            </ul>
           </section>
 
           <section>
@@ -76,22 +87,50 @@ export default function PolitiqueConfidentialitePage() {
               (Vercel for hosting, Supabase for the database) solely for the purpose of providing the service,
               under contractual guarantees compliant with GDPR.
             </p>
+            <p>
+              Vercel and Supabase are companies headquartered in the United States. Your data may therefore
+              be processed on servers located outside the European Union or European Economic Area. In such
+              cases, transfers are governed by Standard Contractual Clauses (SCC) approved by the European
+              Commission, ensuring an adequate level of protection for your personal data.
+            </p>
           </section>
 
           <section>
             <h2 className="text-foreground font-semibold text-lg mb-2">7. Cookies</h2>
+            <p>We use two categories of cookies:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>
+                <strong className="text-foreground">Strictly necessary cookies:</strong>{' '}
+                required for the service to function (authentication, session preferences). These cookies
+                cannot be refused without affecting your ability to use the platform.
+              </li>
+              <li>
+                <strong className="text-foreground">Analytics cookies — Google Analytics 4:</strong>{' '}
+                we use Google Analytics 4 to understand how the platform is used and improve our service.
+                This is not a strictly necessary cookie. Its use is subject to your{' '}
+                <strong className="text-foreground">prior consent</strong>, which you can give or refuse
+                via the cookie banner displayed on your first visit. You may change your choice at any
+                time through the cookie settings accessible on the site.
+              </li>
+            </ul>
             <p>
-              We only use technical cookies strictly necessary for the service to operate
-              (authentication, session preferences). These cookies are not used for advertising
-              or tracking purposes.
-            </p>
-            <p>
-              You can refuse or delete cookies at any time through your browser settings.
+              You can also manage or delete cookies at any time through your browser settings.
             </p>
           </section>
 
           <section>
-            <h2 className="text-foreground font-semibold text-lg mb-2">8. Your rights</h2>
+            <h2 className="text-foreground font-semibold text-lg mb-2">8. Minimum age</h2>
+            <p>
+              Instant Films is intended for users aged <strong className="text-foreground">16 or older</strong>.
+              In countries where national law sets a lower age for consent to information society services
+              (minimum 13 years under Art. 8 GDPR), the use of the platform by a minor below the age of 16
+              requires verifiable parental or guardian authorisation. By creating an account, you confirm
+              that you meet this age requirement.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-foreground font-semibold text-lg mb-2">9. Your rights</h2>
             <p>Under GDPR, you have the following rights:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong className="text-foreground">Right of access</strong>: obtain a copy of your data;</li>
@@ -110,7 +149,7 @@ export default function PolitiqueConfidentialitePage() {
           </section>
 
           <section>
-            <h2 className="text-foreground font-semibold text-lg mb-2">9. Security</h2>
+            <h2 className="text-foreground font-semibold text-lg mb-2">10. Security</h2>
             <p>
               We implement appropriate technical and organisational measures to protect your data
               against unauthorised access, loss, or disclosure (encryption, restricted access,
@@ -119,7 +158,7 @@ export default function PolitiqueConfidentialitePage() {
           </section>
 
           <section>
-            <h2 className="text-foreground font-semibold text-lg mb-2">10. Changes</h2>
+            <h2 className="text-foreground font-semibold text-lg mb-2">11. Changes</h2>
             <p>
               We may update this policy at any time. The date of the last update is shown at the top
               of this page. We will notify you of any significant changes by email or in-app notification.

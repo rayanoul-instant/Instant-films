@@ -30,7 +30,7 @@ export default function CourtMetrageDetailPage() {
   const { data: film, isLoading } = useCourtMetrage(id!);
   const { profile } = useAuth();
   usePageMeta(
-    film ? `${film.titre || film.title || 'Court métrage'} - Instant Films` : 'Instant Films',
+    film ? `${film.titre || film.title || 'Short film'} - Instant Films` : 'Instant Films',
     film?.synopsis || 'Watch this short film on Instant Films.'
   );
   const isAdmin = profile?.is_admin === true;

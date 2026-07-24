@@ -25,7 +25,7 @@ export function FilmGrid({ films, loading }: FilmGridProps) {
   if (films.length === 0) {
     return (
       <div className="text-center py-16">
-        <p className="text-muted-foreground text-lg">Aucun film trouvé</p>
+        <p className="text-muted-foreground text-lg">No films found</p>
       </div>
     );
   }

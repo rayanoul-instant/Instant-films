@@ -64,7 +64,7 @@ export default function FilmDetailPage() {
   const isAdmin = profile?.is_admin === true;
   usePageMeta(
     film ? `${getFilmTitle(film)} - Instant Films` : 'Instant Films',
-    film?.synopsis || 'Regardez ce court métrage sur Instant Films.'
+    film?.synopsis || 'Watch this short film on Instant Films.'
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -233,7 +233,7 @@ export default function FilmDetailPage() {
                       if (e.key === 'Enter') {
                         await updateFilmTitle.mutateAsync({ filmId: film.id, displayTitle: titleDraft.trim() });
                         setEditingTitle(false);
-                        toast.success('Titre mis à jour');
+                        toast.success('Title updated');
                       }
                       if (e.key === 'Escape') setEditingTitle(false);
                     }}
@@ -243,7 +243,7 @@ export default function FilmDetailPage() {
                     onClick={async () => {
                       await updateFilmTitle.mutateAsync({ filmId: film.id, displayTitle: titleDraft.trim() });
                       setEditingTitle(false);
-                      toast.success('Titre mis à jour');
+                      toast.success('Title updated');
                     }}
                     className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:opacity-90"
                   >
@@ -263,7 +263,7 @@ export default function FilmDetailPage() {
                     <button
                       onClick={() => { setTitleDraft(getFilmTitle(film)); setEditingTitle(true); }}
                       className="opacity-0 group-hover/title:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-primary"
-                      title="Modifier le titre"
+                      title="Edit title"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -321,7 +321,7 @@ export default function FilmDetailPage() {
                     : 'bg-secondary border-border text-muted-foreground hover:border-yellow-500 hover:text-yellow-400'
                 )}
               >
-                {(film.genres || []).includes('mainstream') ? '★ Mainstream (retirer)' : '☆ Marquer Mainstream'}
+                {(film.genres || []).includes('mainstream') ? '★ Mainstream (remove)' : '☆ Mark as Mainstream'}
               </button>
               <button
                 onClick={() => toggleMainstream.mutate({ filmId: film.id, genres: film.genres || [], tag: 'kid' })}
@@ -332,7 +332,7 @@ export default function FilmDetailPage() {
                     : 'bg-secondary border-border text-muted-foreground hover:border-blue-500 hover:text-blue-400'
                 )}
               >
-                {(film.genres || []).includes('kid') ? '★ Kid (retirer)' : '☆ Marquer Kid'}
+                {(film.genres || []).includes('kid') ? '★ Kid (remove)' : '☆ Mark as Kid'}
               </button>
 
               {!confirmDelete ? (
@@ -340,11 +340,11 @@ export default function FilmDetailPage() {
                   onClick={() => setConfirmDelete(true)}
                   className="px-3 py-1 rounded-full text-xs font-medium border border-border text-muted-foreground hover:border-destructive hover:text-destructive transition-colors"
                 >
-                  🗑 Supprimer
+                  🗑 Delete
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-destructive font-medium">Confirmer ?</span>
+                  <span className="text-xs text-destructive font-medium">Confirm?</span>
                   <button
                     onClick={async () => {
                       await deleteFilm.mutateAsync(film.id);
@@ -352,13 +352,13 @@ export default function FilmDetailPage() {
                     }}
                     className="px-3 py-1 rounded-full text-xs font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity"
                   >
-                    Oui, supprimer
+                    Yes, delete
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
                     className="px-3 py-1 rounded-full text-xs font-medium bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Annuler
+                    Cancel
                   </button>
                 </div>
               )}
