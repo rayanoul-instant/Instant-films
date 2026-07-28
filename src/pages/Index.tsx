@@ -1,16 +1,38 @@
 import { useState, useEffect } from 'react';
 import heroBg from '@/assets/hero-bg.png';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { Star, ArrowRight, TrendingUp, Sparkles, MessageSquare, ThumbsUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Star, ArrowRight, TrendingUp, Sparkles, MessageSquare, ThumbsUp, Trophy, Award, Zap } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { FilmCard } from '@/components/films/FilmCard';
 import { AvatarDisplay } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
-import { useFeaturedFilms, useFilms, useTopReviews, useRecommendations } from '@/hooks/useFilms';
+import { useFeaturedFilms, useFilms, useTopReviews, useRecommendations, useMustWatch, useFestivalSelection, useSuperShort } from '@/hooks/useFilms';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import logoInstant from '@/assets/logo-instant.png';
+import { Film } from '@/types/database';
+
+function FilmRow({ films, loading }: { films?: Film[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="w-64 flex-shrink-0 aspect-[16/9] rounded-xl bg-muted animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      {films?.slice(0, 10).map((film) => (
+        <div key={film.id} className="w-64 md:w-72 flex-shrink-0">
+          <FilmCard film={film} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const Index = () => {
   usePageMeta(
@@ -21,6 +43,9 @@ const Index = () => {
   const { data: popularFilms, isLoading: loadingPopular } = useFilms({ sortBy: 'popular' });
   const { data: featuredFilms } = useFeaturedFilms();
   const { data: recommendations, isLoading: loadingRec } = useRecommendations();
+  const { data: mustWatchFilms, isLoading: loadingMustWatch } = useMustWatch();
+  const { data: festivalFilms, isLoading: loadingFestival } = useFestivalSelection();
+  const { data: superShortFilms, isLoading: loadingSuperShort } = useSuperShort();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -31,7 +56,7 @@ const Index = () => {
 
   return (
     <Layout showNavLogo={scrolled}>
-      {/* Hero with large logo */}
+      {/* Hero */}
       <section className="relative flex items-center justify-center py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0">
           <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
@@ -61,7 +86,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Popular Films */}
+      {/* Popular */}
       <section className="py-8">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
@@ -75,32 +100,17 @@ const Index = () => {
               </Button>
             </Link>
           </div>
-
-          {loadingPopular ? (
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-64 flex-shrink-0 aspect-[16/9] rounded-xl bg-muted animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {popularFilms?.slice(0, 8).map((film) => (
-                <div key={film.id} className="w-64 md:w-72 flex-shrink-0">
-                  <FilmCard film={film} />
-                </div>
-              ))}
-            </div>
-          )}
+          <FilmRow films={popularFilms} loading={loadingPopular} />
         </div>
       </section>
 
-      {/* Recommended / Featured */}
+      {/* For you */}
       <section className="py-8 bg-card/30">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-accent" />
-              <h2 className="text-xl font-bold">Recommended for you</h2>
+              <h2 className="text-xl font-bold">For you</h2>
             </div>
             <Link to="/search">
               <Button variant="ghost" size="sm" className="text-primary text-sm">
@@ -108,25 +118,66 @@ const Index = () => {
               </Button>
             </Link>
           </div>
+          <FilmRow films={recommendations || featuredFilms} loading={loadingRec} />
+        </div>
+      </section>
 
-          {loadingRec ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="aspect-[16/9] rounded-xl bg-muted animate-pulse" />
-              ))}
+      {/* Must Watch */}
+      <section className="py-8">
+        <div className="container px-4">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold">Must Watch</h2>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {(recommendations || featuredFilms)?.slice(0, 4).map((film) => (
-                <FilmCard key={film.id} film={film} />
-              ))}
+            <Link to="/search?sortBy=rating">
+              <Button variant="ghost" size="sm" className="text-primary text-sm">
+                See all <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <FilmRow films={mustWatchFilms} loading={loadingMustWatch} />
+        </div>
+      </section>
+
+      {/* Festival Selection */}
+      <section className="py-8 bg-card/30">
+        <div className="container px-4">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-bold">Festival Selection</h2>
             </div>
-          )}
+            <Link to="/search">
+              <Button variant="ghost" size="sm" className="text-primary text-sm">
+                See all <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <FilmRow films={festivalFilms} loading={loadingFestival} />
+        </div>
+      </section>
+
+      {/* Super Short */}
+      <section className="py-8">
+        <div className="container px-4">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-bold">Super Short</h2>
+            </div>
+            <Link to="/search">
+              <Button variant="ghost" size="sm" className="text-primary text-sm">
+                See all <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
+          <FilmRow films={superShortFilms} loading={loadingSuperShort} />
         </div>
       </section>
 
       {/* Top Reviews */}
-      <section className="py-8">
+      <section className="py-8 bg-card/30">
         <div className="container px-4">
           <div className="flex items-center gap-2 mb-5">
             <MessageSquare className="w-5 h-5 text-primary" />
@@ -136,7 +187,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA if not logged in */}
+      {/* CTA */}
       {!user && (
         <section className="py-8">
           <div className="container px-4">

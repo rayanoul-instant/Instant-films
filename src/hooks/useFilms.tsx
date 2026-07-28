@@ -57,6 +57,69 @@ export function useFilms(filters?: {
   });
 }
 
+export function useMustWatch() {
+  return useQuery({
+    queryKey: ['films', 'must-watch'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('films')
+        .select('*')
+        .not('genres', 'cs', '{"mainstream"}')
+        .not('genres', 'cs', '{"kid"}')
+        .order('quality_score', { ascending: false })
+        .order('view_count', { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return (data || []) as Film[];
+    },
+  });
+}
+
+export function useFestivalSelection() {
+  return useQuery({
+    queryKey: ['films', 'festival'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('films')
+        .select('*')
+        .not('genres', 'cs', '{"mainstream"}')
+        .not('genres', 'cs', '{"kid"}')
+        .or('title.ilike.%festival%,synopsis.ilike.%festival%,themes.cs.{festival}')
+        .order('quality_score', { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      if (data && data.length > 0) return data as Film[];
+
+      const { data: fallback } = await supabase
+        .from('films')
+        .select('*')
+        .not('genres', 'cs', '{"mainstream"}')
+        .not('genres', 'cs', '{"kid"}')
+        .order('created_at', { ascending: false })
+        .limit(12);
+      return (fallback || []) as Film[];
+    },
+  });
+}
+
+export function useSuperShort() {
+  return useQuery({
+    queryKey: ['films', 'super-short'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('films')
+        .select('*')
+        .not('genres', 'cs', '{"mainstream"}')
+        .not('genres', 'cs', '{"kid"}')
+        .lt('duration_minutes', 4)
+        .order('quality_score', { ascending: false })
+        .limit(12);
+      if (error) throw error;
+      return (data || []) as Film[];
+    },
+  });
+}
+
 export function useFeaturedFilms() {
   return useQuery({
     queryKey: ['films', 'featured'],
