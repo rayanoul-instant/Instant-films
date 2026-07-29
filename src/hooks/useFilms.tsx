@@ -79,16 +79,28 @@ export function useFestivalSelection() {
   return useQuery({
     queryKey: ['films', 'festival'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('films')
-        .select('*')
+      const base = supabase.from('films').select('*')
         .not('genres', 'cs', '{"mainstream"}')
         .not('genres', 'cs', '{"kid"}')
-        .or('title.ilike.%festival%,synopsis.ilike.%festival%,themes.cs.{festival}')
         .order('quality_score', { ascending: false })
         .limit(12);
-      if (error) throw error;
-      if (data && data.length > 0) return data as Film[];
+
+      const [{ data: byText }, { data: byTheme }] = await Promise.all([
+        base.or('title.ilike.%festival%,synopsis.ilike.%festival%'),
+        supabase.from('films').select('*')
+          .not('genres', 'cs', '{"mainstream"}')
+          .not('genres', 'cs', '{"kid"}')
+          .contains('themes', ['festival'])
+          .order('quality_score', { ascending: false })
+          .limit(12),
+      ]);
+
+      const seen = new Set<string>();
+      const results = [...(byText || []), ...(byTheme || [])]
+        .filter(f => { if (seen.has(f.id)) return false; seen.add(f.id); return true; })
+        .slice(0, 12) as Film[];
+
+      if (results.length > 0) return results;
 
       const { data: fallback } = await supabase
         .from('films')
