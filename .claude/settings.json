@@ -10,7 +10,8 @@
       "PowerShell(git -C \"c:\\\\Users\\\\rayan\\\\OneDrive\\\\Documents\\\\Instant\\\\Instant-films\" commit -m \"Fix favicon, half-star display and rating format in reviews\")",
       "PowerShell(git -C \"c:\\\\Users\\\\rayan\\\\OneDrive\\\\Documents\\\\Instant\\\\Instant-films\" push origin main)",
       "mcp__claude_ai_Supabase__list_projects",
-      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\rayan\\\\OneDrive\\\\Documents\\\\Instant\\\\Instant-films\\\\src\\\\assets\\\\accessories\\\\\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object DirectoryName, Name)"
+      "PowerShell(Get-ChildItem \"c:\\\\Users\\\\rayan\\\\OneDrive\\\\Documents\\\\Instant\\\\Instant-films\\\\src\\\\assets\\\\accessories\\\\\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object DirectoryName, Name)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:8081/\" -TimeoutSec 3 -UseBasicParsing; \"OK $\\($r.StatusCode\\)\" } catch { \"NOT RUNNING\" })"
     ]
   }
 }

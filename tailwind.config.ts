@@ -115,7 +115,7 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "fade-in-up": "fade-in-up 0.6s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
-        shimmer: "shimmer 3s linear infinite",
+        shimmer: "shimmer 1.6s linear infinite",
         glow: "glow 2s ease-in-out infinite",
       },
       backgroundImage: {
