@@ -22,11 +22,12 @@ interface Conversation {
 const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
 
 const MOCK_CONVERSATIONS: Conversation[] = [
-  { userId: 'mock-1', username: 'Regellesinge', avatarAccessories: { color: '#7C3AED', mask: 'm11', body: 'b12' }, lastMessage: 'Mdr', lastMessageAt: ago(30 * 1000), unread: true },
   { userId: 'mock-2', username: 'gulyxfilms', avatarAccessories: { color: '#2563EB', hat: 'h9' }, lastMessage: 'T\'as vu le dernier court-métrage ?', lastMessageAt: ago(60 * 60 * 1000), unread: false },
   { userId: 'mock-3', username: 'paccino', avatarAccessories: { color: '#EA580C', mask: 'm6', body: 'b18' }, lastMessage: 'Trop bien celui-là', lastMessageAt: ago(4 * 30 * 24 * 60 * 60 * 1000), unread: false },
   { userId: 'mock-4', username: 'aurianelayon', avatarAccessories: { color: '#DB2777', hat: 'h14', body: 'b19' }, lastMessage: 'Like a fool', lastMessageAt: ago(3 * 30 * 24 * 60 * 60 * 1000), unread: false },
   { userId: 'mock-5', username: 'ducarlane', avatarAccessories: { color: '#16A34A', mask: 'm17' }, lastMessage: 'On se capte demain', lastMessageAt: ago(3 * 30 * 24 * 60 * 60 * 1000), unread: false },
+  { userId: 'mock-1', username: 'Regellesinge', avatarAccessories: { color: '#7C3AED', mask: 'm11', body: 'b12' }, lastMessage: 'Mdr', lastMessageAt: ago(30 * 1000), unread: true },
+  { userId: 'mock-6', username: 'lucieshorts', avatarAccessories: { color: '#DC2626', hat: 'h13', body: 'b10' }, lastMessage: 'On regarde ça ce soir ?', lastMessageAt: ago(5 * 30 * 24 * 60 * 60 * 1000), unread: false },
 ];
 
 export default function MessagesPage() {
