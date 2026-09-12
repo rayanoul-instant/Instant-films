@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Send, Search, ArrowLeft, Trash2 } from 'lucide-react';
 import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,16 @@ interface Conversation {
   lastMessageAt: string;
   unread: boolean;
 }
+
+const ago = (ms: number) => new Date(Date.now() - ms).toISOString();
+
+const MOCK_CONVERSATIONS: Conversation[] = [
+  { userId: 'mock-1', username: 'Regellesinge', avatarAccessories: { color: '#7C3AED', mask: 'm11', body: 'b12' }, lastMessage: 'Mdr', lastMessageAt: ago(30 * 1000), unread: true },
+  { userId: 'mock-2', username: 'gulyxfilms', avatarAccessories: { color: '#2563EB', hat: 'h9' }, lastMessage: 'T\'as vu le dernier court-métrage ?', lastMessageAt: ago(60 * 60 * 1000), unread: false },
+  { userId: 'mock-3', username: 'paccino', avatarAccessories: { color: '#EA580C', mask: 'm6', body: 'b18' }, lastMessage: 'Trop bien celui-là', lastMessageAt: ago(4 * 30 * 24 * 60 * 60 * 1000), unread: false },
+  { userId: 'mock-4', username: 'aurianelayon', avatarAccessories: { color: '#DB2777', hat: 'h14', body: 'b19' }, lastMessage: 'Like a fool', lastMessageAt: ago(3 * 30 * 24 * 60 * 60 * 1000), unread: false },
+  { userId: 'mock-5', username: 'ducarlane', avatarAccessories: { color: '#16A34A', mask: 'm17' }, lastMessage: 'On se capte demain', lastMessageAt: ago(3 * 30 * 24 * 60 * 60 * 1000), unread: false },
+];
 
 export default function MessagesPage() {
   const { user, loading } = useAuth();
@@ -181,7 +191,73 @@ export default function MessagesPage() {
       </div>
     </Layout>
   );
-  if (!user) return <Navigate to="/auth" replace />;
+  // ── Logged-out preview ──────────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <Layout>
+        <div className="relative">
+          <div className="container px-4 py-6 max-w-2xl blur-[1.5px] pointer-events-none select-none">
+            <h1 className="text-2xl font-bold mb-4">Messages</h1>
+
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input placeholder="Search for a user..." className="pl-10 bg-secondary border-border" readOnly tabIndex={-1} />
+            </div>
+
+            <div className="space-y-1">
+              {MOCK_CONVERSATIONS.map((conv) => (
+                <div key={conv.userId} className="w-full flex items-center gap-3 p-3 rounded-xl text-left">
+                  <AvatarDisplay
+                    color={conv.avatarAccessories?.color}
+                    hat={conv.avatarAccessories?.hat}
+                    glasses={conv.avatarAccessories?.glasses}
+                    mask={conv.avatarAccessories?.mask}
+                    body={conv.avatarAccessories?.body}
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="font-semibold text-sm">{conv.username}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(conv.lastMessageAt), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{conv.lastMessage}</p>
+                  </div>
+                  {conv.unread && <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sign-up gate popup */}
+          <div className="fixed inset-x-0 top-0 bottom-24 md:bottom-0 z-40 flex items-center justify-center px-6">
+            <div
+              className="w-full max-w-sm rounded-3xl p-8 text-center"
+              style={{
+                background: 'linear-gradient(145deg, hsl(270 25% 25% / 0.55), hsl(265 30% 15% / 0.5))',
+                backdropFilter: 'blur(24px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.4)',
+                boxShadow: '0 8px 32px hsl(270 40% 10% / 0.4), inset 0 1px 0 hsl(0 0% 100% / 0.08), inset 0 -1px 0 hsl(270 30% 20% / 0.3)',
+                border: '1px solid hsl(0 0% 100% / 0.12)',
+              }}
+            >
+              <h2 className="text-2xl font-bold mb-2">Chat with the community</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Discuss short films, share your favorites with friends
+              </p>
+              <Link to="/auth">
+                <Button className="btn-cinema w-full rounded-full h-12 text-base">
+                  Create an account
+                </Button>
+              </Link>
+              <p className="text-xs text-muted-foreground mt-3">it only takes 30s</p>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   // ── Conversation view ──────────────────────────────────────────────────────
   if (selectedUser) {
