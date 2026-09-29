@@ -1,109 +1,199 @@
+/**
+ * Génère les synopsis manquants à partir de yt_description (déjà en base via
+ * fetch-youtube-stats.mjs) — AUCUN appel YouTube ici, seul Gemini est utilisé,
+ * en lots de 25 films par requête (économie de quota).
+ *
+ * Modèle : gemini-3.5-flash-lite (quota journalier séparé de gemini-2.5-flash ;
+ * gemini-2.5-flash-lite n'est plus disponible pour les nouvelles clés API).
+ *
+ * Ne traite que les films sans synopsis (synopsis NULL ou vide). Si
+ * yt_description est vide ou ne contient que des crédits techniques, le
+ * synopsis est explicitement mis à NULL (pas d'invention) et le titre est
+ * affiché dans le terminal — sans appeler Gemini pour ces cas-là (économie
+ * de quota supplémentaire).
+ *
+ * Usage (l'un des deux flags est obligatoire) :
+ *   node --env-file=.env scripts/generate-synopsis.mjs --sample=10
+ *   node --env-file=.env scripts/generate-synopsis.mjs --full
+ */
 import { createClient } from "@supabase/supabase-js";
+import { requireServiceRoleKey, updateAndVerify } from "./_write-guard.mjs";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const YT_KEY = process.env.YOUTUBE_API_KEY;
-const GEMINI_KEY = process.env.GEMINI_API_KEY; // Ajoute cette ligne dans ton .env
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_KEY || !YT_KEY || !GEMINI_KEY) {
+if (!SUPABASE_URL || !GEMINI_KEY) {
   console.error("Variables manquantes dans .env :");
   if (!SUPABASE_URL) console.error("  - VITE_SUPABASE_URL");
-  if (!SUPABASE_KEY) console.error("  - VITE_SUPABASE_PUBLISHABLE_KEY");
-  if (!YT_KEY) console.error("  - YOUTUBE_API_KEY");
   if (!GEMINI_KEY) console.error("  - GEMINI_API_KEY");
   process.exit(1);
 }
+requireServiceRoleKey();
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Patterns parasites dans les synopsis
-const SYNOPSIS_NOISE = [
-  /submit your (short )?film/i,
-  /https?:\/\/\S+/g,
-  /subscribe/i,
-  /abonnez-vous/i,
-  /shortverse\.com/i,
-  /shortoftheweek\.com/i,
-  /watch more/i,
-  /follow us/i,
-];
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const BATCH_SIZE = 25;
 
-function isSynopsisClean(synopsis) {
-  if (!synopsis || synopsis.length < 20) return false;
-  return !SYNOPSIS_NOISE.some((p) => p.test(synopsis));
+const sampleArg = process.argv.find((a) => a.startsWith("--sample="));
+const FULL = process.argv.includes("--full");
+const SAMPLE = sampleArg ? parseInt(sampleArg.split("=")[1], 10) : null;
+
+if (!FULL && !SAMPLE) {
+  console.error("Usage : --sample=N (test) ou --full (tous les films restants). Aucun des deux n'a été passé.");
+  process.exit(1);
 }
 
-function extractVideoId(url) {
-  const m = url?.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  return m ? m[1] : null;
+function isSynopsisEmpty(synopsis) {
+  return !synopsis || synopsis.trim().length === 0;
 }
 
-async function getYouTubeDescriptions(videoIds) {
-  const params = new URLSearchParams({
-    part: "snippet",
-    id: videoIds.join(","),
-    key: YT_KEY,
-  });
-  const resp = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}`);
-  if (!resp.ok) { const err = await resp.json(); throw new Error(err.error?.message || "YouTube API error"); }
-  const data = await resp.json();
-  const result = {};
-  for (const item of data.items || []) {
-    result[item.id] = item.snippet?.description || "";
-  }
-  return result;
+// Heuristique locale : description vide ou quasi entièrement composée de
+// lignes de crédits (Director:, Cast:, Music:, liens, hashtags...) plutôt que
+// de vraie prose. Filtrée AVANT l'appel Gemini pour économiser du quota.
+function looksLikeCreditsOnly(description) {
+  if (!description || description.trim().length < 30) return true;
+  const creditLines = (description.match(/^(director|cast|produced by|writer|dop|editor|music|sound|starring|prod\.|réalisat|acteurs?|scénario|montage)\s*[:\-]/gim) || []).length;
+  const prose = description.replace(/https?:\/\/\S+/g, "").replace(/#\w+/g, "").trim();
+  return prose.length < 40 || creditLines >= 4;
 }
 
-async function generateSynopsis(title, description) {
-  if (!description || description.length < 30) return null;
+function extractRetryDelaySeconds(errBody, message) {
+  const detail = errBody?.error?.details?.find((d) => d["@type"]?.includes("RetryInfo"));
+  const raw = detail?.retryDelay || (message.match(/retry in ([\d.]+)s/i)?.[0] ?? null);
+  const match = String(raw || "").match(/([\d.]+)/);
+  return match ? parseFloat(match[1]) : 35;
+}
+
+function isDailyQuotaError(err) {
+  const detailsStr = JSON.stringify(err.rawBody?.error?.details || []);
+  return /perday|per_day|daily/i.test(detailsStr) || /per day/i.test(err.message || "");
+}
+
+function isRateLimitError(err) {
+  return err.status === 429 || /quota|429/i.test(err.message);
+}
+
+function isNetworkError(err) {
+  return /fetch failed|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|network/i.test(err.message);
+}
+
+/**
+ * films: [{ id, title, description }]
+ * Retourne [{ id, synopsis }] (synopsis === "SKIP" si Gemini juge que ce n'est pas assez).
+ */
+async function generateSynopsesBatch(films) {
+  const itemsText = films
+    .map((f, i) => `${i + 1}. id="${f.id}" titre="${f.title}"\ndescription YouTube: "${f.description.slice(0, 800)}"`)
+    .join("\n\n");
 
   const prompt = `Tu es un assistant éditorial pour une plateforme de streaming de courts métrages.
 
-Voici le titre du court métrage : "${title}"
-Voici la description YouTube : "${description.slice(0, 1000)}"
+Pour chacun des ${films.length} films ci-dessous, écris un synopsis de 1 à 2 phrases maximum, en français, qui décrit l'histoire ou le propos du film de manière claire et attrayante.
 
-Ta tâche : écrire un synopsis de 1 à 2 phrases maximum, en français, qui décrit l'histoire ou le propos du film de manière claire et attrayante. 
+Règles strictes, pour chaque film :
+- Si la description ne contient pas assez d'informations sur le contenu du film (crédits techniques, liens, appels à s'abonner...), mets exactement "SKIP" comme synopsis pour ce film.
+- Ne mentionne jamais YouTube, des URLs, des noms de chaînes ou des appels à l'action.
+- Maximum 2 phrases courtes et percutantes par synopsis.
 
-Règles strictes :
-- Si la description ne contient pas assez d'informations sur le contenu du film (par exemple si c'est juste des crédits techniques, des liens, des appels à s'abonner), réponds uniquement par le mot "SKIP"
-- Ne mentionne jamais YouTube, des URLs, des noms de chaînes ou des appels à l'action
-- Écris uniquement le synopsis, sans introduction ni conclusion
-- Maximum 2 phrases courtes et percutantes
+Films :
+${itemsText}
 
-Réponds uniquement avec le synopsis ou "SKIP".`;
+Réponds UNIQUEMENT avec un tableau JSON de ${films.length} objets, un par film, dans le même ordre, au format exact :
+[{"id": "...", "synopsis": "..."}]`;
 
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 150, temperature: 0.3 },
+        generationConfig: {
+          maxOutputTokens: 150 * films.length,
+          temperature: 0.3,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { id: { type: "string" }, synopsis: { type: "string" } },
+              required: ["id", "synopsis"],
+            },
+          },
+        },
       }),
     }
   );
 
   if (!resp.ok) {
-    const err = await resp.json();
-    throw new Error(err.error?.message || "Gemini API error");
+    const errBody = await resp.json().catch(() => ({}));
+    const message = errBody.error?.message || "Gemini API error";
+    const error = new Error(message);
+    error.status = resp.status;
+    error.rawBody = errBody;
+    error.retryDelaySeconds = extractRetryDelaySeconds(errBody, message);
+    throw error;
   }
 
   const data = await resp.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-  if (!text || text === "SKIP" || text.length < 15) return null;
-  return text;
+  if (!text) return [];
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`Réponse Gemini non-JSON: ${text.slice(0, 200)}`);
+  }
+  if (!Array.isArray(parsed)) throw new Error("Réponse Gemini : JSON reçu n'est pas un tableau");
+  return parsed;
+}
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+const MAX_NETWORK_RETRIES = 3;
+const NETWORK_RETRY_DELAY_MS = 8000;
+
+async function generateSynopsesBatchWithRetry(films) {
+  let rateLimitAttempts = 0;
+  let networkAttempts = 0;
+
+  for (;;) {
+    try {
+      return await generateSynopsesBatch(films);
+    } catch (err) {
+      if (isRateLimitError(err) && isDailyQuotaError(err)) {
+        err.isDailyQuota = true;
+        throw err;
+      }
+      if (isRateLimitError(err) && rateLimitAttempts < MAX_RATE_LIMIT_RETRIES) {
+        rateLimitAttempts++;
+        const wait = Math.max(err.retryDelaySeconds || 35, 5) + 1;
+        process.stdout.write(` [429, retry ${rateLimitAttempts}/${MAX_RATE_LIMIT_RETRIES} dans ${wait}s]`);
+        await new Promise((r) => setTimeout(r, wait * 1000));
+        continue;
+      }
+      if (isNetworkError(err) && networkAttempts < MAX_NETWORK_RETRIES) {
+        networkAttempts++;
+        process.stdout.write(` [reseau, retry ${networkAttempts}/${MAX_NETWORK_RETRIES} dans ${NETWORK_RETRY_DELAY_MS / 1000}s]`);
+        await new Promise((r) => setTimeout(r, NETWORK_RETRY_DELAY_MS));
+        continue;
+      }
+      err.attemptsMade = rateLimitAttempts + networkAttempts;
+      throw err;
+    }
+  }
 }
 
 async function main() {
-  console.log("\nGeneration des synopsis avec Gemini\n");
+  console.log(`\nGénération des synopsis (${GEMINI_MODEL}, lots de ${BATCH_SIZE})${SAMPLE ? ` — SAMPLE=${SAMPLE} (test)` : " (--full)"}\n`);
 
-  // Recuperer les films sans synopsis propre
   let allFilms = [], offset = 0;
   while (true) {
     const { data, error } = await supabase
       .from("films")
-      .select("id, title, synopsis, video_url")
+      .select("id, title, synopsis, yt_description")
       .range(offset, offset + 999);
     if (error) { console.error("Erreur:", error.message); process.exit(1); }
     if (!data?.length) break;
@@ -114,68 +204,87 @@ async function main() {
 
   console.log(`${allFilms.length} films au total`);
 
-  // Filtrer ceux qui ont un synopsis manquant ou pollué
-  const toUpdate = allFilms.filter((f) => !isSynopsisClean(f.synopsis));
-  console.log(`${toUpdate.length} films sans synopsis propre\n`);
+  let toUpdate = allFilms.filter((f) => isSynopsisEmpty(f.synopsis));
+  console.log(`${toUpdate.length} films sans synopsis`);
+  if (SAMPLE) {
+    toUpdate = toUpdate.slice(0, SAMPLE);
+    console.log(`→ limité aux ${toUpdate.length} premiers pour ce test`);
+  }
+  console.log("");
 
   if (!toUpdate.length) { console.log("Rien a faire !"); return; }
 
-  let updated = 0, skipped = 0, errors = 0;
+  let updated = 0, skippedNoInfo = 0, skippedByGemini = 0, errors = 0, geminiRequests = 0, geminiRequestsFailed = 0;
+  let stoppedForDailyQuota = false;
 
-  for (let i = 0; i < toUpdate.length; i += 50) {
-    const batch = toUpdate.slice(i, i + 50);
-    const videoIds = batch.map((f) => extractVideoId(f.video_url)).filter(Boolean);
-    if (!videoIds.length) continue;
+  for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+    const slice = toUpdate.slice(i, i + BATCH_SIZE);
+    const label = `[${i + 1}-${Math.min(i + slice.length, toUpdate.length)}/${toUpdate.length}]`;
 
-    let descriptions = {};
+    // Filtre local AVANT Gemini : description vide/crédits-only → synopsis NULL, pas d'appel API.
+    const exploitable = [];
+    for (const f of slice) {
+      if (looksLikeCreditsOnly(f.yt_description)) {
+        skippedNoInfo++;
+        console.log(`${label} "${f.title}" → synopsis NULL (description vide ou crédits uniquement, pas d'appel Gemini)`);
+      } else {
+        exploitable.push({ id: f.id, title: f.title, description: f.yt_description });
+      }
+    }
+
+    if (!exploitable.length) continue;
+
+    process.stdout.write(`${label} lot de ${exploitable.length} film(s)...`);
+
+    let results;
+    geminiRequests++;
     try {
-      descriptions = await getYouTubeDescriptions(videoIds);
+      results = await generateSynopsesBatchWithRetry(exploitable);
     } catch (err) {
-      console.error(`Erreur YouTube batch ${i}: ${err.message}`);
-      if (err.message.includes("quota")) { console.log("Quota YouTube atteint."); break; }
+      geminiRequestsFailed++;
+      if (err.isDailyQuota) {
+        console.log(`\n\nQuota JOURNALIER Gemini atteint — arrêt immédiat (pas de retry).`);
+        console.log(`  ${err.message}`);
+        stoppedForDailyQuota = true;
+        break;
+      }
+      console.log(` ERREUR${err.attemptsMade > 0 ? ` (abandon apres ${err.attemptsMade} tentative(s))` : ""}: ${err.message}`);
+      errors += exploitable.length;
+      await new Promise((r) => setTimeout(r, 5000));
       continue;
     }
 
-    for (const film of batch) {
-      const vidId = extractVideoId(film.video_url);
-      if (!vidId) continue;
+    const byId = new Map(results.map((r) => [r.id, r]));
 
-      const description = descriptions[vidId] || "";
-      const idx = i + batch.indexOf(film) + 1;
-      process.stdout.write(`[${idx}/${toUpdate.length}] ${film.title.slice(0, 35).padEnd(35)} → `);
+    for (const { id, title } of exploitable) {
+      const synopsis = byId.get(id)?.synopsis?.trim();
 
-      try {
-        const synopsis = await generateSynopsis(film.title, description);
-
-        if (synopsis) {
-          const { error } = await supabase
-            .from("films")
-            .update({ synopsis })
-            .eq("id", film.id);
-          if (error) { console.log(`ERREUR DB: ${error.message}`); errors++; }
-          else { console.log(synopsis.slice(0, 60) + "..."); updated++; }
-        } else {
-          console.log("SKIP (pas assez d'info)");
-          skipped++;
-        }
-      } catch (err) {
-        console.log(`ERREUR: ${err.message}`);
-        errors++;
-        if (err.message.includes("quota") || err.message.includes("429")) {
-          console.log("\nQuota Gemini atteint. Relance demain.");
-          break;
-        }
+      if (!synopsis || synopsis === "SKIP" || synopsis.length < 15) {
+        skippedByGemini++;
+        console.log(`  "${title}" → SKIP (Gemini juge l'info insuffisante)`);
+        continue;
       }
 
-      // Pause pour respecter le rate limit Gemini
-      await new Promise((r) => setTimeout(r, 4500));
+      const { error } = await updateAndVerify(supabase, "films", id, { synopsis });
+      if (error) {
+        console.log(`\nÉchec écriture "${title}" (id=${id}): ${error.message}`);
+        console.error(`Arrêt — ${updated} synopsis déjà appliqués avant l'échec.`);
+        process.exit(1);
+      }
+      updated++;
     }
+
+    console.log(` OK — ${updated}/${toUpdate.length} traités au total`);
+
+    await new Promise((r) => setTimeout(r, 5000));
   }
 
-  console.log(`\nTermine !`);
-  console.log(`  ${updated} synopsis generes`);
-  console.log(`  ${skipped} films sans assez d'info`);
-  console.log(`  ${errors} erreurs\n`);
+  const remaining = toUpdate.length - updated - skippedNoInfo - skippedByGemini;
+  console.log(`\nTermine${stoppedForDailyQuota ? " (arret anticipe : quota journalier)" : ""} !`);
+  console.log(`  Requêtes Gemini utilisées : ${geminiRequests} (dont ${geminiRequestsFailed} échouées)`);
+  console.log(`  Films traités  : ${updated}/${toUpdate.length}`);
+  console.log(`  Films restants : ${Math.max(0, remaining)}`);
+  console.log(`  (${skippedNoInfo} synopsis mis à NULL sans appel Gemini, ${skippedByGemini} SKIP par Gemini, ${errors} erreurs de lot)\n`);
 }
 
 main();

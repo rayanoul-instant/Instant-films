@@ -1,14 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
+import { requireServiceRoleKey, deleteAndVerify } from "./_write-guard.mjs";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
+if (!SUPABASE_URL) {
   console.error("Variables manquantes dans .env");
   process.exit(1);
 }
+requireServiceRoleKey();
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Mots-cles qui indiquent un episode de serie
 const SERIES_PATTERNS = [
@@ -55,18 +57,15 @@ async function main() {
   console.log(`\nSuppression de ${toDelete.length} episodes...`);
 
   const ids = toDelete.map((f) => f.id);
-  const { error: deleteError } = await supabase
-    .from("films")
-    .delete()
-    .in("id", ids);
+  const { error: deleteError, deletedIds } = await deleteAndVerify(supabase, "films", ids);
 
   if (deleteError) {
     console.error("Erreur suppression :", deleteError.message);
     process.exit(1);
   }
 
-  console.log(`\nTermine ! ${toDelete.length} episodes supprimes.`);
-  console.log(`Il reste ${films.length - toDelete.length} films.\n`);
+  console.log(`\nTermine ! ${deletedIds.length} episodes supprimes.`);
+  console.log(`Il reste ${films.length - deletedIds.length} films.\n`);
 }
 
 main();

@@ -1,15 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
+import { requireServiceRoleKey, updateAndVerify } from "./_write-guard.mjs";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const YT_KEY = process.env.YOUTUBE_API_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_KEY || !YT_KEY) {
+if (!SUPABASE_URL || !YT_KEY) {
   console.error("Variables manquantes dans .env");
   process.exit(1);
 }
+requireServiceRoleKey();
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Patterns pour extraire le realisateur depuis la description
 function extractDirector(description) {
@@ -165,17 +167,15 @@ async function main() {
         );
 
         if (director) {
-          const { error } = await supabase
-            .from("films")
-            .update({ director })
-            .eq("id", film.id);
+          const { error } = await updateAndVerify(supabase, "films", film.id, { director });
 
           if (error) {
             console.log(`ERREUR: ${error.message}`);
-          } else {
-            console.log(director);
-            updated++;
+            console.error(`\nArrêt — ${updated} realisateurs deja mis a jour avant l'echec.`);
+            process.exit(1);
           }
+          console.log(director);
+          updated++;
         } else {
           console.log("non trouve");
           notFound++;

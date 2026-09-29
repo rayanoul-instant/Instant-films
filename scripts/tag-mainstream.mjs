@@ -1,14 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
+import { requireServiceRoleKey, updateAndVerify } from "./_write-guard.mjs";
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!SUPABASE_URL || !SUPABASE_KEY) {
+if (!SUPABASE_URL) {
   console.error("Variables manquantes dans .env");
   process.exit(1);
 }
+requireServiceRoleKey();
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const MAINSTREAM_CHANNELS = [
   "sony pictures", "disney", "pixar", "marvel", "dreamworks",
@@ -85,17 +87,15 @@ async function main() {
 
     const newGenres = [...currentGenres, "Mainstream"];
 
-    const { error: updateError } = await supabase
-      .from("films")
-      .update({ genres: newGenres })
-      .eq("id", film.id);
+    const { error: updateError } = await updateAndVerify(supabase, "films", film.id, { genres: newGenres });
 
     if (updateError) {
       console.error("  Erreur " + film.title + ": " + updateError.message);
-    } else {
-      console.log("  OK : " + film.title);
-      updated++;
+      console.error("\nArrêt — " + updated + "/" + toUpdate.length + " déjà tagués avant l'échec.");
+      process.exit(1);
     }
+    console.log("  OK : " + film.title);
+    updated++;
   }
 
   console.log("\nTermine ! " + updated + " films tagges Mainstream.\n");
