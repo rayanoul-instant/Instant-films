@@ -24,7 +24,7 @@ export function BottomNav() {
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none md:hidden">
       <nav className="pointer-events-auto relative mb-5 mx-4">
         <div
-          className="flex items-center gap-2 rounded-[28px] px-3 py-2.5 relative"
+          className="flex items-center gap-3 rounded-[24px] px-4 py-2 relative"
           style={{
             background: 'linear-gradient(145deg, hsl(270 20% 50% / 0.35), hsl(265 30% 40% / 0.25))',
             backdropFilter: 'blur(24px) saturate(1.4)',
@@ -42,13 +42,13 @@ export function BottomNav() {
                 to={item.href}
                 onMouseEnter={() => setHoveredItem(item.href)}
                 onMouseLeave={() => setHoveredItem(null)}
-                className="relative w-16 h-14 rounded-[20px] flex items-center justify-center transition-all duration-300"
+                className="relative w-20 h-12 rounded-[18px] flex items-center justify-center transition-all duration-300"
                 style={{
                   background: active
-                    ? 'linear-gradient(145deg, hsl(0 0% 100% / 0.22), hsl(0 0% 100% / 0.10))'
+                    ? 'linear-gradient(145deg, hsl(270 70% 55%), hsl(270 65% 48%))'
                     : 'transparent',
                   boxShadow: active
-                    ? 'inset 0 1px 0 hsl(0 0% 100% / 0.15), 0 2px 8px hsl(270 40% 10% / 0.2)'
+                    ? 'inset 0 1px 0 hsl(0 0% 100% / 0.2), 0 4px 12px hsl(270 70% 45% / 0.45)'
                     : 'none',
                 }}
               >
