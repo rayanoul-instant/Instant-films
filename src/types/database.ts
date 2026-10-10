@@ -28,11 +28,16 @@ export interface Film {
   average_rating?: number;
 }
 
+/** Bandes automatiques convertibles en section curée ("For you" et "Top Reviews" n'en font pas partie). */
+export type HomeSlotKey = 'popular' | 'must_watch' | 'festival_selection' | 'super_short';
+
 export interface HomeSection {
   id: string;
   title: string;
   position: number;
   is_visible: boolean;
+  /** Non-null quand cette section remplace une bande automatique précise. */
+  slot_key: HomeSlotKey | null;
   created_at: string;
   updated_at: string;
 }
@@ -45,8 +50,14 @@ export interface HomeSectionFilm {
   created_at: string;
 }
 
+/** Film attaché à une section, avec l'id du lien (home_section_films.id) — nécessaire
+ * pour retirer/remplacer/réordonner le lien sans toucher au film lui-même. */
+export interface LinkedSectionFilm extends Film {
+  _linkId: string;
+}
+
 export interface HomeSectionWithFilms extends HomeSection {
-  films: Film[];
+  films: LinkedSectionFilm[];
 }
 
 export interface Profile {

@@ -371,6 +371,7 @@ export type Database = {
           id: string
           is_visible: boolean
           position: number
+          slot_key: string | null
           title: string
           updated_at: string
         }
@@ -379,6 +380,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           position?: number
+          slot_key?: string | null
           title: string
           updated_at?: string
         }
@@ -387,6 +389,7 @@ export type Database = {
           id?: string
           is_visible?: boolean
           position?: number
+          slot_key?: string | null
           title?: string
           updated_at?: string
         }

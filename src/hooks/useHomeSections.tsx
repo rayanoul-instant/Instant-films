@@ -1,16 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Film, HomeSection, HomeSectionWithFilms } from '@/types/database';
+import { Film, HomeSection, HomeSectionWithFilms, HomeSlotKey, LinkedSectionFilm } from '@/types/database';
 import { toast } from 'sonner';
 
-/** Film attaché à une section, avec l'id du lien (home_section_films.id) — utilisé
- * côté admin pour supprimer/réordonner le lien sans toucher au film lui-même. */
-export interface AdminSectionFilm extends Film {
-  _linkId: string;
-}
-
+export type AdminSectionFilm = LinkedSectionFilm;
 export interface AdminHomeSection extends HomeSection {
   films: AdminSectionFilm[];
+}
+
+function mapLinks<T extends { section_id: string; id: string; films: unknown }>(
+  sections: HomeSection[],
+  links: T[]
+): HomeSectionWithFilms[] {
+  return sections.map((section) => ({
+    ...section,
+    films: links
+      .filter((l) => l.section_id === section.id)
+      .map((l) => ({ ...(l.films as unknown as Film), _linkId: l.id }))
+      .filter((f) => !!f.id),
+  }));
 }
 
 /** Page d'accueil (public) : sections visibles, avec leurs films, dans l'ordre. */
@@ -28,18 +36,12 @@ export function useHomeSections() {
 
       const { data: links, error: linksError } = await supabase
         .from('home_section_films')
-        .select('section_id, position, films(*)')
+        .select('id, section_id, position, films(*)')
         .in('section_id', sections.map((s) => s.id))
         .order('position', { ascending: true });
       if (linksError) throw linksError;
 
-      return sections.map((section) => ({
-        ...section,
-        films: (links || [])
-          .filter((l) => l.section_id === section.id)
-          .map((l) => l.films as unknown as Film)
-          .filter(Boolean),
-      })) as HomeSectionWithFilms[];
+      return mapLinks(sections as unknown as HomeSection[], links || []);
     },
   });
 }
@@ -63,12 +65,7 @@ export function useAdminHomeSections() {
         .order('position', { ascending: true });
       if (linksError) throw linksError;
 
-      return sections.map((section) => ({
-        ...section,
-        films: (links || [])
-          .filter((l) => l.section_id === section.id)
-          .map((l) => ({ ...(l.films as unknown as Film), _linkId: l.id })),
-      })) as AdminHomeSection[];
+      return mapLinks(sections as unknown as HomeSection[], links || []) as AdminHomeSection[];
     },
   });
 }
@@ -181,6 +178,25 @@ export function useRemoveFilmFromSection() {
   });
 }
 
+/** Remplace le film d'un lien existant, sans changer sa position dans la bande. */
+export function useReplaceFilmInSection() {
+  const invalidate = useInvalidateHomeSections();
+  return useMutation({
+    mutationFn: async ({ linkId, filmId }: { linkId: string; filmId: string }) => {
+      const { error } = await supabase.from('home_section_films').update({ film_id: filmId }).eq('id', linkId);
+      if (error) throw error;
+    },
+    onSuccess: invalidate,
+    onError: (error: Error) => {
+      if (error.message.includes('duplicate') || error.message.includes('unique')) {
+        toast.error('This film is already in the section');
+      } else {
+        toast.error('Failed to replace film — ' + error.message);
+      }
+    },
+  });
+}
+
 /** Persiste un nouvel ordre de films dans une section (glisser-déposer). */
 export function useReorderSectionFilms() {
   const invalidate = useInvalidateHomeSections();
@@ -194,5 +210,40 @@ export function useReorderSectionFilms() {
     },
     onSuccess: invalidate,
     onError: (error: Error) => toast.error('Failed to reorder films — ' + error.message),
+  });
+}
+
+/**
+ * Première modification d'une bande automatique (Popular, Must Watch, Festival
+ * Selection, Super Short) : crée la section curée correspondante avec la liste de
+ * films déjà voulue (l'ancienne liste automatique + la modification de l'admin),
+ * en une seule fois. Les modifications suivantes passent par les hooks ci-dessus.
+ */
+export function useConvertSlotToCustomSection() {
+  const queryClient = useQueryClient();
+  const invalidate = useInvalidateHomeSections();
+  return useMutation({
+    mutationFn: async ({ slotKey, title, filmIds }: { slotKey: HomeSlotKey; title: string; filmIds: string[] }) => {
+      const { count } = await supabase.from('home_sections').select('id', { count: 'exact', head: true });
+      const { data: section, error } = await supabase
+        .from('home_sections')
+        .insert({ title, slot_key: slotKey, position: count ?? 0, is_visible: true })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      if (filmIds.length > 0) {
+        const { error: filmsError } = await supabase
+          .from('home_section_films')
+          .insert(filmIds.map((filmId, position) => ({ section_id: section.id, film_id: filmId, position })));
+        if (filmsError) throw filmsError;
+      }
+      return section.id as string;
+    },
+    onSuccess: () => {
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ['home-sections', 'admin'] });
+    },
+    onError: (error: Error) => toast.error('Failed to save changes — ' + error.message),
   });
 }
