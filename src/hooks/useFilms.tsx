@@ -52,6 +52,20 @@ export function useFilms(filters?: {
         });
       }
 
+      // "Popular" : mélange léger des mieux notés pour éviter un classement
+      // figé — les premiers films restent tous d'excellents films (issus du
+      // pool des mieux notés), juste pas dans un ordre parfaitement monotone.
+      if (filters?.sortBy === 'popular' && films.length > 1) {
+        const POOL_SIZE = Math.min(films.length, 30);
+        const pool = films.slice(0, POOL_SIZE);
+        const rest = films.slice(POOL_SIZE);
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        films = [...pool, ...rest];
+      }
+
       return films;
     },
   });
