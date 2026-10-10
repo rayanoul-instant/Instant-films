@@ -28,6 +28,27 @@ export interface Film {
   average_rating?: number;
 }
 
+export interface HomeSection {
+  id: string;
+  title: string;
+  position: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HomeSectionFilm {
+  id: string;
+  section_id: string;
+  film_id: string;
+  position: number;
+  created_at: string;
+}
+
+export interface HomeSectionWithFilms extends HomeSection {
+  films: Film[];
+}
+
 export interface Profile {
   id: string;
   username: string;
@@ -123,6 +144,19 @@ export const GENRE_LABELS: Record<FilmGenre, string> = {
   experimental: 'Experimental',
   kid: 'Kid',
   mainstream: 'Mainstream',
+};
+
+// Partagé entre GenrePage.tsx (client) et middleware.ts (SSR) pour rester en sync.
+export const GENRE_DESCRIPTIONS: Partial<Record<FilmGenre, string>> = {
+  drama: 'Intense and moving human stories told in short form.',
+  comedy: 'Laughs and lightness — the best comedies in just a few minutes.',
+  animation: 'Unique and creative visual worlds, from hand-drawn to 3D.',
+  horror: 'Chills and suspense guaranteed — horror distilled into short films.',
+  romance: 'Touching love stories told in just a few minutes.',
+  scifi: 'Alternative futures and imaginary worlds — science fiction in short form.',
+  experimental: 'Visual art and avant-garde cinema — films that push the boundaries.',
+  kid: 'Stories for all ages, full of imagination.',
+  mainstream: 'The most watched and appreciated short films on Instant Films.',
 };
 
 export const AVATAR_BASES = ['default', 'cat', 'dog', 'robot', 'alien', 'ghost'];

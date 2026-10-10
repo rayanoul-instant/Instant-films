@@ -8,6 +8,7 @@ import { FilmCard } from '@/components/films/FilmCard';
 import { AvatarDisplay } from '@/components/films/AvatarDisplay';
 import { Button } from '@/components/ui/button';
 import { useFeaturedFilms, useFilms, useTopReviews, useRecommendations, useMustWatch, useFestivalSelection, useSuperShort } from '@/hooks/useFilms';
+import { useHomeSections } from '@/hooks/useHomeSections';
 import { useAuth } from '@/hooks/useAuth';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import logoInstant from '@/assets/logo-instant.png';
@@ -46,6 +47,8 @@ const Index = () => {
   const { data: mustWatchFilms, isLoading: loadingMustWatch } = useMustWatch();
   const { data: festivalFilms, isLoading: loadingFestival } = useFestivalSelection();
   const { data: superShortFilms, isLoading: loadingSuperShort } = useSuperShort();
+  const { data: customSections, isLoading: loadingCustomSections } = useHomeSections();
+  const hasCustomSections = !loadingCustomSections && !!customSections?.length;
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -86,8 +89,22 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Admin-curated sections, when defined — replace the default rows below */}
+      {hasCustomSections && customSections.map((section, i) => (
+        <section key={section.id} className={`py-4 ${i % 2 === 1 ? 'bg-card/30' : ''}`}>
+          <div className="container px-4">
+            <div className="flex items-center gap-2 mb-5">
+              <h2 className="text-xl font-bold">{section.title}</h2>
+            </div>
+            <FilmRow films={section.films} loading={false} />
+          </div>
+        </section>
+      ))}
+
+      {!hasCustomSections && (
+      <>
       {/* Popular */}
-      <section className="py-8">
+      <section className="py-4">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -105,11 +122,11 @@ const Index = () => {
       </section>
 
       {/* For you */}
-      <section className="py-8 bg-card/30">
+      <section className="py-4 bg-card/30">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-accent" />
+              <Sparkles className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold">For you</h2>
             </div>
             <Link to="/search">
@@ -123,7 +140,7 @@ const Index = () => {
       </section>
 
       {/* Must Watch */}
-      <section className="py-8">
+      <section className="py-4">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -141,11 +158,11 @@ const Index = () => {
       </section>
 
       {/* Festival Selection */}
-      <section className="py-8 bg-card/30">
+      <section className="py-4 bg-card/30">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-accent" />
+              <Award className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-bold">Festival Selection</h2>
             </div>
             <Link to="/search">
@@ -159,7 +176,7 @@ const Index = () => {
       </section>
 
       {/* Super Short */}
-      <section className="py-8">
+      <section className="py-4">
         <div className="container px-4">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
@@ -175,9 +192,11 @@ const Index = () => {
           <FilmRow films={superShortFilms} loading={loadingSuperShort} />
         </div>
       </section>
+      </>
+      )}
 
       {/* Top Reviews */}
-      <section className="py-8 bg-card/30">
+      <section className="py-4 bg-card/30">
         <div className="container px-4">
           <div className="flex items-center gap-2 mb-5">
             <MessageSquare className="w-5 h-5 text-primary" />
@@ -189,7 +208,7 @@ const Index = () => {
 
       {/* CTA */}
       {!user && (
-        <section className="py-8">
+        <section className="py-4">
           <div className="container px-4">
             <div className="rounded-2xl bg-gradient-to-br from-primary/20 via-accent/10 to-transparent border border-border p-6 text-center">
               <h2 className="text-xl font-bold mb-2">Join Instant</h2>

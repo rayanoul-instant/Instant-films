@@ -28,6 +28,7 @@ const PolitiqueConfidentialitePage = lazy(() => import("./pages/PolitiqueConfide
 const NotFound = lazy(() => import("./pages/NotFound"));
 const GenrePage = lazy(() => import("./pages/GenrePage"));
 const DirectorPage = lazy(() => import("./pages/DirectorPage"));
+const AdminHomePage = lazy(() => import("./pages/admin/AdminHomePage"));
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ function AnimatedRoutes() {
             <Route path="/courts-metrages/:id" element={<CourtMetrageDetailPage />} />
             <Route path="/genre/:genre" element={<GenrePage />} />
             <Route path="/realisateur/:slug" element={<DirectorPage />} />
+            <Route path="/admin/home" element={<AdminHomePage />} />
             <Route path="/legal" element={<MentionsLegalesPage />} />
             <Route path="/terms" element={<CGUPage />} />
             <Route path="/privacy" element={<PolitiqueConfidentialitePage />} />
