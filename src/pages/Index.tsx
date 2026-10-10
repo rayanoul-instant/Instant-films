@@ -62,8 +62,9 @@ const Index = () => {
       {/* Hero */}
       <section className="relative flex items-center justify-center py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroBg} alt="" className="w-full h-full object-cover object-center blur-sm scale-105" />
-          <div className="absolute inset-0 bg-black/75" />
+          <img src={heroBg} alt="" className="w-full h-full object-cover object-center blur-sm scale-105 grayscale" />
+          <div className="absolute inset-0 bg-black/55" />
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-background" />
         </div>
         <div className="container relative z-10 px-4 text-center">
           <motion.img
