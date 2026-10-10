@@ -19,7 +19,7 @@ const GENRES: FilmGenre[] = [
 ];
 
 export default function SearchPage() {
-  usePageMeta('Search - Instant Films', 'Search for short films on Instant Films.');
+  usePageMeta('Search Short Films | Instant Films', 'Browse and search hundreds of free short films on Instant Films by genre, director, or title.');
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
 

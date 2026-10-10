@@ -23,7 +23,10 @@ const supabase = createClient(
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY
 );
 
-const GENRES = ['drama', 'comedy', 'animation', 'horror', 'romance', 'scifi', 'experimental', 'kid', 'mainstream'];
+// Genres narratifs réels uniquement — mainstream/kid sont des tags admin
+// masqués de la navigation normale (useFilms.tsx), jamais indexés.
+const GENRES = ['drama', 'comedy', 'animation', 'horror', 'romance', 'scifi', 'experimental'];
+const MIN_FILMS = 4; // seuil sous lequel une page genre/réalisateur est jugée trop pauvre pour être indexée
 
 const STATIC_PAGES = [
   { url: '/',        priority: '1.0', changefreq: 'daily' },
@@ -31,7 +34,6 @@ const STATIC_PAGES = [
   { url: '/legal',   priority: '0.3', changefreq: 'yearly' },
   { url: '/privacy', priority: '0.3', changefreq: 'yearly' },
   { url: '/terms',   priority: '0.3', changefreq: 'yearly' },
-  ...GENRES.map(g => ({ url: `/genre/${g}`, priority: '0.7', changefreq: 'weekly' })),
 ];
 
 function slugify(str) {
@@ -62,28 +64,47 @@ async function fetchAll(table, columns) {
 }
 
 async function generate() {
-  const [{ data: films, error: e1 }, { data: courts, error: e2 }, { data: dirRows, error: e3 }] = await Promise.all([
-    fetchAll('films', 'slug, updated_at'),
+  const [{ data: films, error: e1 }, { data: courts, error: e2 }] = await Promise.all([
+    fetchAll('films', 'slug, updated_at, director, genres'),
     fetchAll('courts_metrages', 'id, created_at'),
-    fetchAll('films', 'director'),
   ]);
-  const directors = (dirRows || []).filter(d => d.director);
 
   if (e1) console.warn('films fetch error:', e1.message);
   if (e2) console.warn('courts_metrages fetch error:', e2.message);
-  if (e3) console.warn('directors fetch error:', e3.message);
 
-  const uniqueDirectors = [...new Set(directors.map(d => d.director))];
+  // Réalisateurs avec au moins MIN_FILMS films.
+  const directorCounts = new Map();
+  for (const f of films || []) {
+    if (!f.director) continue;
+    directorCounts.set(f.director, (directorCounts.get(f.director) || 0) + 1);
+  }
+  const eligibleDirectors = [...directorCounts.entries()]
+    .filter(([, count]) => count >= MIN_FILMS)
+    .map(([director]) => director);
+
+  // Genres avec au moins MIN_FILMS films visibles (hors mainstream/kid),
+  // même logique d'exclusion que useFilms.tsx.
+  const genreCounts = new Map();
+  for (const f of films || []) {
+    const genres = f.genres || [];
+    if (genres.includes('mainstream') || genres.includes('kid')) continue;
+    for (const g of genres) {
+      if (!GENRES.includes(g)) continue;
+      genreCounts.set(g, (genreCounts.get(g) || 0) + 1);
+    }
+  }
+  const eligibleGenres = GENRES.filter(g => (genreCounts.get(g) || 0) >= MIN_FILMS);
 
   const entries = [
     ...STATIC_PAGES.map(p => urlEntry(`${SITE_URL}${p.url}`, null, p.changefreq, p.priority)),
+    ...eligibleGenres.map(g => urlEntry(`${SITE_URL}/genre/${g}`, null, 'weekly', '0.7')),
     ...(films || []).map(f =>
       urlEntry(`${SITE_URL}/films/${f.slug}`, f.updated_at?.split('T')[0], 'weekly', '0.7')
     ),
     ...(courts || []).map(c =>
       urlEntry(`${SITE_URL}/courts-metrages/${c.id}`, c.created_at?.split('T')[0], 'monthly', '0.6')
     ),
-    ...uniqueDirectors.map(d =>
+    ...eligibleDirectors.map(d =>
       urlEntry(`${SITE_URL}/realisateur/${slugify(d)}`, null, 'monthly', '0.6')
     ),
   ];
@@ -91,7 +112,7 @@ async function generate() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
 
   writeFileSync(resolve(__dirname, '../public/sitemap.xml'), xml, 'utf8');
-  console.log(`✓ sitemap.xml — ${STATIC_PAGES.length} static + genre, ${(films || []).length} films, ${(courts || []).length} courts métrages, ${uniqueDirectors.length} réalisateurs`);
+  console.log(`✓ sitemap.xml — ${STATIC_PAGES.length} static, ${eligibleGenres.length}/${GENRES.length} genres (≥${MIN_FILMS} films), ${(films || []).length} films, ${(courts || []).length} courts métrages, ${eligibleDirectors.length}/${directorCounts.size} réalisateurs (≥${MIN_FILMS} films)`);
 }
 
 generate().catch(err => { console.error(err); process.exit(1); });

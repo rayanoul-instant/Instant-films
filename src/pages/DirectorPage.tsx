@@ -14,8 +14,8 @@ export default function DirectorPage() {
   const countLabel = `${count} short film${count > 1 ? 's' : ''}`;
 
   usePageMeta(
-    director ? `${director} — Short films | Instant Films` : 'Instant Films',
-    director ? `Discover ${director}'s ${countLabel} available on Instant Films.` : undefined
+    director ? `${director}'s Films | Instant Films` : 'Instant Films',
+    director ? `Watch ${count} short film${count > 1 ? 's' : ''} by ${director} on Instant Films — stream, rate, and discover their work online.` : undefined
   );
 
   const isLoading = loadingDirector || loadingFilms;
