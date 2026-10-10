@@ -181,7 +181,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
         {/* Content */}
         <div className="p-4">
           <h3 className={cn(
-            "font-display font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1",
+            "font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1",
             featured ? "text-xl" : "text-base"
           )}>
             {getFilmTitle(film)}
@@ -219,7 +219,7 @@ export function FilmCard({ film, featured = false, isTop3 = false }: FilmCardPro
                 >
                   <Badge
                     variant="outline"
-                    className="text-xs border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    className="text-xs border-white/10 text-[#A1A1AA] hover:border-white/20 transition-colors"
                   >
                     {GENRE_LABELS[genre]}
                   </Badge>

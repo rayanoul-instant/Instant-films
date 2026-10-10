@@ -156,7 +156,7 @@ export default function AuthPage() {
           </Link>
           
           <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-            Join the <span className="text-gradient-gold">film</span> community
+            Join the <span className="text-primary">film</span> community
           </h1>
           <p className="text-lg text-muted-foreground max-w-md">
             Discover exceptional short films, share your reviews, and connect 

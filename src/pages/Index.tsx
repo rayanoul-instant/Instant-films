@@ -62,8 +62,8 @@ const Index = () => {
       {/* Hero */}
       <section className="relative flex items-center justify-center py-16 md:py-24 overflow-hidden">
         <div className="absolute inset-0">
-          <img src={heroBg} alt="" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/50 to-background" />
+          <img src={heroBg} alt="" className="w-full h-full object-cover object-center blur-sm scale-105" />
+          <div className="absolute inset-0 bg-black/75" />
         </div>
         <div className="container relative z-10 px-4 text-center">
           <motion.img
@@ -80,7 +80,7 @@ const Index = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <h1 className="text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">
-              Join a community of <span className="text-gradient-gold">short film lovers</span>
+              Join a community of short film lovers
             </h1>
             <p className="text-muted-foreground max-w-lg mx-auto text-sm md:text-base">
               Watch • Explore • Share

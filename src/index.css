@@ -6,14 +6,14 @@
 
 @layer base {
   :root {
-    /* Dark + Violet theme */
-    --background: 265 25% 8%;
+    /* Dark neutral theme, violet reserved for interactive/active elements */
+    --background: 240 5% 4%;
     --foreground: 260 10% 95%;
 
-    --card: 265 20% 12%;
+    --card: 240 4% 9%;
     --card-foreground: 260 10% 95%;
 
-    --popover: 265 20% 14%;
+    --popover: 240 4% 11%;
     --popover-foreground: 260 10% 95%;
 
     /* Violet primary */
@@ -24,8 +24,8 @@
     --secondary: 265 18% 16%;
     --secondary-foreground: 260 10% 90%;
 
-    /* Lighter violet accent */
-    --accent: 280 60% 65%;
+    /* Single violet accent — same as primary, kept as a separate token for semantic use */
+    --accent: 270 70% 55%;
     --accent-foreground: 0 0% 100%;
 
     --muted: 265 15% 20%;
@@ -34,7 +34,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 265 15% 20%;
+    --border: 0 0% 16%;
     --input: 265 18% 16%;
     --ring: 270 70% 55%;
 
@@ -42,16 +42,16 @@
 
     /* Custom cinema colors - violet */
     --cinema-gold: 270 70% 55%;
-    --cinema-wine: 280 60% 65%;
+    --cinema-wine: 270 70% 55%;
     --cinema-bronze: 265 50% 45%;
     --cinema-silver: 260 10% 70%;
     --cinema-dark: 265 25% 10%;
     --cinema-darker: 265 25% 5%;
 
     /* Gradients */
-    --gradient-gold: linear-gradient(135deg, hsl(270 70% 55%), hsl(280 60% 65%));
+    --gradient-gold: linear-gradient(135deg, hsl(270 70% 55%), hsl(270 70% 55%));
     --gradient-cinema: linear-gradient(180deg, hsl(265 20% 12%) 0%, hsl(265 25% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(265 20% 15%), hsl(265 20% 11%));
+    --gradient-card: linear-gradient(145deg, hsl(240 4% 9%), hsl(240 4% 9%));
     --gradient-hero: linear-gradient(180deg, transparent 0%, hsl(265 25% 8% / 0.8) 50%, hsl(265 25% 8%) 100%);
 
     /* Shadows */
@@ -78,14 +78,13 @@
 
   html {
     scroll-behavior: smooth;
-    background-color: hsl(275 45% 22%);
+    background-color: hsl(var(--background));
   }
 
   body {
     @apply text-foreground antialiased;
     font-family: 'Work Sans', sans-serif;
-    background: linear-gradient(180deg, hsl(275 45% 22%) 0%, hsl(270 35% 14%) 30%, hsl(265 30% 9%) 60%, hsl(260 20% 5%) 100%);
-    background-attachment: fixed;
+    background-color: hsl(var(--background));
     min-height: 100vh;
   }
 
