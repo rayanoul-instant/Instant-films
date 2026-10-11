@@ -20,6 +20,8 @@ const SLOT_LABELS: Record<string, string> = {
   popular: 'Popular', must_watch: 'Must Watch', festival_selection: 'Festival Selection', super_short: 'Super Short',
 };
 
+const POINTER_ACTIVATION = { distance: 5 };
+
 export default function AdminHomePage() {
   const { user, profile, loading } = useAuth();
 
@@ -54,7 +56,7 @@ function SectionsManager() {
   const reorderSections = useReorderHomeSections();
   const [newTitle, setNewTitle] = useState('');
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: POINTER_ACTIVATION }));
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

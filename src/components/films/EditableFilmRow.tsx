@@ -13,6 +13,12 @@ import {
   useReorderSectionFilms, useReplaceFilmInSection, useSearchFilmsByTitle,
 } from '@/hooks/useHomeSections';
 
+// Objets stables (hors composant) : recréer ces options à chaque rendu forcerait
+// dnd-kit à réinitialiser ses listeners en boucle, ce qui gèle l'UI avec plusieurs
+// bandes éditables simultanément.
+const MOUSE_ACTIVATION = { distance: 8 };
+const TOUCH_ACTIVATION = { delay: 250, tolerance: 8 };
+
 type RowFilm = Film | LinkedSectionFilm;
 
 interface EditableFilmRowProps {
@@ -46,8 +52,8 @@ export function EditableFilmRow({
   }, [films]);
 
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: MOUSE_ACTIVATION }),
+    useSensor(TouchSensor, { activationConstraint: TOUCH_ACTIVATION }),
   );
 
   const persist = (newFilmIds: string[]) => {
@@ -214,7 +220,12 @@ function FilmPicker({ onPick, onClose, excludeIds }: {
   excludeIds: string[];
 }) {
   const [query, setQuery] = useState('');
-  const { data: results, isLoading } = useSearchFilmsByTitle(query);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(timeout);
+  }, [query]);
+  const { data: results, isLoading } = useSearchFilmsByTitle(debouncedQuery);
 
   return (
     <div className="absolute z-30 top-full left-0 mt-1 w-64 bg-popover border border-border rounded-lg shadow-lg">
@@ -231,7 +242,7 @@ function FilmPicker({ onPick, onClose, excludeIds }: {
       <div className="max-h-56 overflow-y-auto">
         {query.trim().length < 2 ? (
           <p className="text-xs text-muted-foreground p-3">Type at least 2 characters.</p>
-        ) : isLoading ? (
+        ) : query !== debouncedQuery || isLoading ? (
           <p className="text-xs text-muted-foreground p-3">Searching...</p>
         ) : !results?.length ? (
           <p className="text-xs text-muted-foreground p-3">No films found.</p>
