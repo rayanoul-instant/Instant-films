@@ -1,16 +1,36 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /messages
+Disallow: /auth
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /messages
+Disallow: /auth
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /messages
+Disallow: /auth
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /messages
+Disallow: /auth
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /messages
+Disallow: /auth
 
-Sitemap: https://instant-films.com/sitemap.xml
+Sitemap: https://www.instant-films.com/sitemap.xml
