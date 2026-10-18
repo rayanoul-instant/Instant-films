@@ -131,6 +131,54 @@ function injectNoscript(html: string, innerHtml: string): string {
   return html.replace('<div id="root">', `<div id="root"><noscript>${innerHtml}</noscript>`);
 }
 
+function getYouTubeId(url: string): string | null {
+  const patterns = [
+    /youtu\.be\/([^?&#]+)/,
+    /youtube\.com\/watch\?v=([^&#]+)/,
+    /youtube\.com\/embed\/([^?&#]+)/,
+    /youtube\.com\/shorts\/([^?&#]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+// Certains synopsis stockés en base se terminent par "..."/"…" (troncature à
+// l'import), parfois en plein milieu d'un mot. On ne touche jamais à la colonne
+// synopsis elle-même — seulement au texte utilisé dans le JSON-LD : on retire le
+// marqueur puis on recule jusqu'au dernier espace pour ne jamais couper un mot.
+function cleanSynopsisForJsonLd(text: string): string {
+  const withoutMarker = text.replace(/(\.\.\.|…)\s*$/, '').trimEnd();
+  if (withoutMarker === text.trimEnd()) return text; // pas de marqueur de troncature
+  const lastSpace = withoutMarker.lastIndexOf(' ');
+  return lastSpace > 0 ? withoutMarker.slice(0, lastSpace) : withoutMarker;
+}
+
+function videoObject(opts: {
+  name: string;
+  description: string;
+  thumbnailUrl: string;
+  uploadDate?: string;
+  durationMinutes?: number | null;
+  embedUrl?: string | null;
+  director?: string | null;
+}) {
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: opts.name,
+    description: cleanSynopsisForJsonLd(opts.description),
+    thumbnailUrl: [opts.thumbnailUrl],
+  };
+  if (opts.uploadDate) data.uploadDate = opts.uploadDate;
+  if (opts.durationMinutes) data.duration = `PT${opts.durationMinutes}M`;
+  if (opts.embedUrl) data.embedUrl = opts.embedUrl;
+  if (opts.director) data.director = { '@type': 'Person', name: opts.director };
+  return data;
+}
+
 function breadcrumbs(origin: string, items: { name: string; url: string }[]) {
   return {
     '@context': 'https://schema.org',
@@ -175,6 +223,7 @@ interface FilmRow {
   thumbnail_url: string | null;
   duration_minutes: number | null;
   release_year: number | null;
+  video_url: string | null;
 }
 
 async function handleFilm(url: URL) {
@@ -187,7 +236,7 @@ async function handleFilm(url: URL) {
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/films?${filterField}=eq.${encodeURIComponent(slug)}` +
-        `&select=slug,title,display_title,synopsis,director,thumbnail_url,duration_minutes,release_year&limit=1`,
+        `&select=slug,title,display_title,synopsis,director,thumbnail_url,duration_minutes,release_year,video_url&limit=1`,
       { headers: { apikey: SUPABASE_KEY!, Authorization: `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return next();
@@ -207,6 +256,17 @@ async function handleFilm(url: URL) {
   const image = film.thumbnail_url || `${url.origin}/logo-instant.png`;
 
   let out = injectHeadTags(html, { title, description, canonical, image, ogType: 'video.other' });
+
+  const youtubeId = film.video_url ? getYouTubeId(film.video_url) : null;
+  out = injectJsonLd(out, videoObject({
+    name: film.display_title || film.title,
+    description,
+    thumbnailUrl: image,
+    uploadDate: film.release_year ? `${film.release_year}-01-01` : undefined,
+    durationMinutes: film.duration_minutes,
+    embedUrl: youtubeId ? `https://www.youtube.com/embed/${youtubeId}` : null,
+    director: film.director,
+  }));
 
   const noscript = `
       <h1>${escapeHtml(film.display_title || film.title)}</h1>
