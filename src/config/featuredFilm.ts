@@ -12,4 +12,4 @@
  * id in the Supabase `films` table, set FEATURED_FILM_ID to it and confirm the title.
  * When the user says "back to automatic", set it back to null.
  */
-export const FEATURED_FILM_ID: string | null = '27685516-79c1-4982-9f09-5cfbd77e137f'; // EVERY LIVING BREATHING MOMENT — Angelo Visser
+export const FEATURED_FILM_ID: string | null = 'd996f45a-868c-4b84-af01-3b3d5636ccc5'; // Party Animal — Bryce Adam Brown

@@ -117,9 +117,10 @@ function FeaturedHero() {
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/70 to-transparent" />
       </div>
       {/* Texte et bouton entièrement posés sur le bas de l'image, sur tous les écrans */}
-      <div className="absolute inset-x-0 bottom-0">
+      {/* translate-y-6 (mobile) : le texte déborde de 24px sous l'image, sur le fondu */}
+      <div className="absolute inset-x-0 bottom-0 translate-y-6 md:translate-y-0">
         {/* Ombre noire derrière le texte pour rester lisible sur n'importe quelle image */}
-        <div className="container px-4 pb-4 md:pb-12 [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_2px_12px_rgba(0,0,0,0.7)]">
+        <div className="container px-4 pb-0 md:pb-6 [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_2px_12px_rgba(0,0,0,0.7)]">
           <p className="text-sm md:text-base font-medium text-white mb-1 md:mb-2">Film of the day</p>
           <h1 className="font-display text-xl sm:text-3xl md:text-6xl font-semibold text-white mb-1 md:mb-2 max-w-3xl line-clamp-2">
             {getFilmTitle(film)}
@@ -190,15 +191,20 @@ const Index = () => {
       {/* Header : petit logo à gauche uniquement */}
       <header className="container px-4 h-14 md:h-16 flex items-center">
         <Link to="/" aria-label="Instant Films home">
-          <img src={logoInstant} alt="Instant Films" className="h-11 md:h-12 object-contain" />
+          <img src={logoInstant} alt="Instant Films" className="h-12 md:h-14 object-contain" />
         </Link>
       </header>
 
       <FeaturedHero />
 
-      <div className="container px-4 pt-6 pb-4">
-        <p className="text-lg text-foreground/70 max-w-2xl">
-          Discover the best short films. Rate, review and connect with other fans.
+      {/* Accroche : 24px sous le texte du hero (pt-12 = 24px de débordement + 24px sur mobile) ;
+          pb-4 + py-4 de la section suivante = 32px avant "Popular" */}
+      <div className="container px-4 pt-12 md:pt-6 pb-4">
+        <p className="font-display text-[30px] font-semibold leading-tight text-white max-w-2xl">
+          Discover the best short films.
+        </p>
+        <p className="mt-2 text-base text-muted-foreground max-w-2xl">
+          Rate, review and connect with other fans.
         </p>
       </div>
 
