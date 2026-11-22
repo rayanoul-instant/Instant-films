@@ -18,7 +18,7 @@ export function Layout({ children, hideFooter: hideFooterProp }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className={`flex-1 pb-6 md:pb-0 ${location.pathname !== '/' ? 'md:pt-20' : ''}`}>
+      <main className={`flex-1 pb-24 md:pb-0 ${location.pathname !== '/' ? 'md:pt-20' : ''}`}>
         {children}
       </main>
       {!hideFooter && (

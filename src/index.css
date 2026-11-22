@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -48,16 +48,10 @@
     --cinema-dark: 265 25% 10%;
     --cinema-darker: 265 25% 5%;
 
-    /* Gradients */
-    --gradient-gold: linear-gradient(135deg, hsl(270 70% 55%), hsl(270 70% 55%));
-    --gradient-cinema: linear-gradient(180deg, hsl(265 20% 12%) 0%, hsl(265 25% 8%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(240 4% 9%), hsl(240 4% 9%));
-    --gradient-hero: linear-gradient(180deg, transparent 0%, hsl(265 25% 8% / 0.8) 50%, hsl(265 25% 8%) 100%);
-
-    /* Shadows */
-    --shadow-glow: 0 0 30px hsl(270 70% 55% / 0.2);
-    --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.4);
-    --shadow-elevated: 0 8px 40px hsl(0 0% 0% / 0.5);
+    /* Shadows — no glows or colored shadows */
+    --shadow-glow: none;
+    --shadow-card: none;
+    --shadow-elevated: none;
 
     /* Sidebar */
     --sidebar-background: 265 25% 10%;
@@ -83,62 +77,27 @@
 
   body {
     @apply text-foreground antialiased;
-    font-family: 'Work Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     background-color: hsl(var(--background));
     min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
   }
 }
 
 @layer components {
-  .hero-gradient {
-    background: var(--gradient-hero);
-  }
-
   .cinema-card {
-    @apply relative overflow-hidden rounded-xl transition-all duration-500;
-    background: var(--gradient-card);
-    box-shadow: var(--shadow-card);
+    @apply relative overflow-hidden transition-colors duration-200;
+    border-radius: 8px;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
   }
 
   .cinema-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: var(--shadow-glow), var(--shadow-elevated);
-  }
-
-  .text-gradient-gold {
-    background: var(--gradient-gold);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .glow-border {
-    @apply relative;
-  }
-
-  .glow-border::before {
-    content: '';
-    @apply absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300;
-    background: linear-gradient(135deg, hsl(270 70% 55% / 0.3), transparent);
-    z-index: -1;
-    filter: blur(20px);
-  }
-
-  .glow-border:hover::before {
-    @apply opacity-100;
-  }
-
-  .film-overlay {
-    @apply absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 transition-opacity duration-300;
-  }
-
-  .cinema-card:hover .film-overlay {
-    @apply opacity-100;
+    border-color: hsl(0 0% 24%);
   }
 
   ::-webkit-scrollbar {
@@ -156,18 +115,18 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--cinema-gold) / 0.5);
+    background: hsl(0 0% 30%);
   }
 
   .btn-cinema {
-    @apply relative font-medium transition-all duration-300;
-    background: var(--gradient-gold);
+    @apply relative font-medium transition-opacity duration-200;
+    border-radius: 6px;
+    background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
   }
 
   .btn-cinema:hover {
-    transform: scale(1.03);
-    filter: brightness(1.1);
+    opacity: 0.9;
   }
 
   .star-rating {

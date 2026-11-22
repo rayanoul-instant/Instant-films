@@ -127,8 +127,8 @@ function YouTubePlayer({ youtubeId, poster, durationMinutes, onPlay, onRate, onS
       >
         <img src={thumbnailUrl} alt="Video thumbnail" className="w-full h-full object-cover" />
         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-          <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center animate-glow">
-            <Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" />
+          <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center">
+            <Play className="w-10 h-10 text-black fill-black ml-1" />
           </div>
         </div>
       </div>
@@ -295,8 +295,8 @@ function NativeVideoPlayer({ src, poster, onPlay }: VideoPlayerProps) {
           className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer"
           onClick={togglePlay}
         >
-          <div className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center animate-glow">
-            <Play className="w-10 h-10 text-primary-foreground fill-primary-foreground ml-1" />
+          <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center">
+            <Play className="w-10 h-10 text-black fill-black ml-1" />
           </div>
         </div>
       )}

@@ -24,7 +24,7 @@ export function BottomNav() {
     <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pointer-events-none md:hidden">
       <nav className="pointer-events-auto relative mb-5 mx-4">
         <div
-          className="flex items-center gap-2 rounded-[24px] px-3 py-2 relative"
+          className="flex items-center gap-2 rounded-[24px] px-3 py-1 relative"
           style={{
             background: '#161618',
             boxShadow: '0 8px 32px hsl(0 0% 0% / 0.4)',
@@ -51,7 +51,7 @@ export function BottomNav() {
                 }}
               >
                 <item.icon
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   style={{
                     color: active
                       ? 'hsl(0 0% 100%)'

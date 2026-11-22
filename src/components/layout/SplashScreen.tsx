@@ -19,7 +19,7 @@ export function SplashScreen({ show, onDone }: SplashScreenProps) {
       {show && (
         <motion.div
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ background: 'linear-gradient(180deg, hsl(275 45% 22%) 0%, hsl(265 30% 9%) 100%)' }}
+          style={{ background: 'linear-gradient(180deg, hsl(275 30% 5%) 0%, hsl(265 20% 1.5%) 100%)' }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: 'easeInOut' }}
         >

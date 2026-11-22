@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['"Playfair Display"', 'serif'],
+        display: ['Fraunces', 'serif'],
         sans: ['Inter', 'sans-serif'],
       },
       colors: {
@@ -100,14 +100,6 @@ export default {
           from: { backgroundPosition: "200% 0" },
           to: { backgroundPosition: "-200% 0" },
         },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
-        },
-        glow: {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(270 70% 55% / 0.3)" },
-          "50%": { boxShadow: "0 0 40px hsl(270 70% 55% / 0.5)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,12 +108,10 @@ export default {
         "fade-in-up": "fade-in-up 0.6s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
         shimmer: "shimmer 1.6s linear infinite",
-        glow: "glow 2s ease-in-out infinite",
-      },
-      backgroundImage: {
-        "gradient-gold": "linear-gradient(135deg, hsl(270 70% 55%), hsl(280 60% 65%))",
-        "gradient-cinema": "linear-gradient(180deg, hsl(260 10% 8%) 0%, hsl(260 10% 4%) 100%)",
-        "gradient-radial": "radial-gradient(ellipse at center, var(--tw-gradient-stops))",
+        // Design rule: no bounce / pulse / glow animations anywhere — these utilities are disabled site-wide.
+        pulse: "none",
+        bounce: "none",
+        glow: "none",
       },
     },
   },

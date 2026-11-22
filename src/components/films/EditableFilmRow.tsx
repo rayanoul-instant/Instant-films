@@ -109,7 +109,7 @@ export function EditableFilmRow({
     return (
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="w-64 flex-shrink-0 aspect-[16/9] rounded-xl bg-muted animate-pulse" />
+          <div key={i} className="w-64 flex-shrink-0 aspect-[16/9] rounded-[8px] bg-muted" />
         ))}
       </div>
     );
@@ -146,7 +146,7 @@ export function EditableFilmRow({
           <div className="relative w-32 flex-shrink-0">
             <button
               onClick={() => setPickerFor(pickerFor === 'add' ? null : 'add')}
-              className="w-full aspect-video rounded-lg border-2 border-dashed border-white/15 text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center"
+              className="w-full aspect-video rounded-lg border-2 border-dashed border-white/15 text-muted-foreground hover:border-white/40 hover:text-foreground transition-colors flex items-center justify-center"
               aria-label="Add a film"
             >
               <Plus className="w-6 h-6" />
@@ -200,7 +200,7 @@ function EditableFilmThumb({
       <button
         onClick={(e) => { e.stopPropagation(); onToggleReplace(); }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute bottom-2 left-2 px-2 py-1 rounded-full text-[11px] font-medium bg-black/70 text-white hover:bg-primary transition-colors"
+        className="absolute bottom-2 left-2 px-2 py-1 rounded-[4px] text-xs font-medium bg-black/70 text-white hover:bg-black/90 transition-colors"
       >
         Replace
       </button>
