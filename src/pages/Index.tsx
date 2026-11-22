@@ -95,7 +95,7 @@ function FeaturedHero() {
   const { data: film, isLoading } = useFeaturedFilm();
 
   if (isLoading) {
-    return <div className="w-full aspect-video md:max-h-[80vh] bg-card" />;
+    return <div className="w-full aspect-video bg-card" />;
   }
   if (!film) return null;
 
@@ -108,24 +108,26 @@ function FeaturedHero() {
 
   return (
     <section className="relative w-full">
-      {/* Image en vrai 16:9 (pas de recadrage) ; sur mobile le texte passe juste en dessous */}
-      <div className="relative w-full aspect-video md:max-h-[80vh] overflow-hidden bg-card">
+      {/* Image toujours en 16:9 = format natif des miniatures : aucun zoom ni recadrage */}
+      <div className="relative w-full aspect-video overflow-hidden bg-card">
         {film.thumbnail_url && <HeroImage src={film.thumbnail_url} />}
         {/* Fondu en haut : l'image se fond dans le bandeau du logo */}
         <div className="absolute inset-x-0 top-0 h-16 md:h-24 bg-gradient-to-b from-background to-transparent" />
         {/* Fondu sombre uniquement en bas, pour la lisibilité du texte */}
-        <div className="absolute inset-x-0 bottom-0 h-1/2 md:h-2/3 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/70 to-transparent" />
       </div>
-      <div className="relative -mt-8 md:mt-0 md:absolute md:inset-x-0 md:bottom-0">
-        <div className="container px-4 pb-4 md:pb-12">
-          <p className="text-sm text-muted-foreground mb-2">Film of the day</p>
-          <h1 className="font-display text-4xl md:text-6xl font-semibold text-white mb-2 max-w-3xl">
+      {/* Texte et bouton entièrement posés sur le bas de l'image, sur tous les écrans */}
+      <div className="absolute inset-x-0 bottom-0">
+        {/* Ombre noire derrière le texte pour rester lisible sur n'importe quelle image */}
+        <div className="container px-4 pb-4 md:pb-12 [text-shadow:0_1px_2px_rgba(0,0,0,0.9),0_2px_12px_rgba(0,0,0,0.7)]">
+          <p className="text-sm md:text-base font-medium text-white mb-1 md:mb-2">Film of the day</p>
+          <h1 className="font-display text-xl sm:text-3xl md:text-6xl font-semibold text-white mb-1 md:mb-2 max-w-3xl line-clamp-2">
             {getFilmTitle(film)}
           </h1>
-          <p className="text-base text-muted-foreground mb-6">{details}</p>
+          <p className="text-xs md:text-base text-white/70 mb-2 md:mb-6">{details}</p>
           <Link
             to={`/films/${film.slug}`}
-            className="inline-flex items-center h-12 px-8 rounded-[6px] bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+            className="inline-flex items-center h-8 md:h-12 px-4 md:px-8 rounded-[6px] bg-primary text-primary-foreground text-sm md:text-base font-medium hover:opacity-90 transition-opacity"
           >
             Watch
           </Link>
